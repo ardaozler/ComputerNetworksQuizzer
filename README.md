@@ -1,6 +1,7 @@
 # Computer Networks Quizzer
 
 Single-file **Computer Networks quiz app** for PoliTO exam practice.
+
 Live on: https://ardaozler.github.io/ComputerNetworksQuizzer/
 
 ## Usage
