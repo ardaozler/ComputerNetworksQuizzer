@@ -2581,12 +2581,13 @@
 
             const availableCount = Math.min(count, filtered.length);
 
-            const shuffled = [...filtered].sort(() => Math.random() - 0.5);
-            quizQuestions = shuffled.slice(0, availableCount);
-
-            if (order === 'random') {
-                quizQuestions = quizQuestions.sort(() => Math.random() - 0.5);
+            if (order === 'sequential') {
+                quizQuestions = [...filtered].slice(0, availableCount);
+            } else if (order === 'random') {
+                const shuffled = [...filtered].sort(() => Math.random() - 0.5);
+                quizQuestions = shuffled.slice(0, availableCount);
             }
+
 
             userAnswers = new Array(quizQuestions.length).fill(null);
             isAnswered = new Array(quizQuestions.length).fill(false);
