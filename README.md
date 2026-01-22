@@ -16,3 +16,5 @@ Single-file **Computer Networks quiz app** for PoliTO exam practice.
 Built for **Politecnico di Torino students** and peers.
 
 ## Feel free to fix any problems you see and send a PR
+
+inspired by: https://kurtoglusefa.github.io/vuequizzer/#/
