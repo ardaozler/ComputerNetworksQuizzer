@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>CN Quiz</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            touch-action: manipulation;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 20px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 30px;
+            border-radius: 8px 8px 0 0;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .setup-screen,
+        .quiz-screen,
+        .results-screen {
+            padding: 40px;
+            display: none;
+        }
+
+        .setup-screen.active,
+        .quiz-screen.active,
+        .results-screen.active {
+            display: block;
+        }
+
+        .setup-option {
+            margin: 20px 0;
+        }
+
+        .setup-option label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .setup-option select,
+        .setup-option input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+
+        .btn {
+            padding: 14px 30px;
+            background: #2c3e50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+            margin: 10px 5px;
+        }
+
+        .btn:hover {
+            background: #34495e;
+        }
+
+        .btn:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            background: #ecf0f1;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+
+        .question-container {
+            padding: 40px;
+            min-height: 400px;
+        }
+
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #ecf0f1;
+            flex-wrap: wrap;
+        }
+
+        .question-number {
+            font-size: 1.1em;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .collection-badge {
+            background: #3498db;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.85em;
+        }
+
+        .question-text {
+            font-size: 1.2em;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            color: #2c3e50;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .option {
+            padding: 16px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .option:hover:not(.locked) {
+            border-color: #3498db;
+            background: #ecf0f1;
+        }
+
+        .option.locked {
+            cursor: default;
+        }
+
+        .option-letter {
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            background: #ecf0f1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            flex-shrink: 0;
+            color: #2c3e50;
+        }
+
+        .option.selected {
+            border-color: #3498db;
+            background: #e8f4f8;
+        }
+
+        .option.selected .option-letter {
+            background: #3498db;
+            color: white;
+        }
+
+        .option.correct {
+            border-color: #27ae60;
+            background: #d5f4e6;
+        }
+
+        .option.correct .option-letter {
+            background: #27ae60;
+            color: white;
+        }
+
+        .option.wrong {
+            border-color: #e74c3c;
+            background: #fadbd8;
+        }
+
+        .option.wrong .option-letter {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .hint-explanation {
+            margin-top: 20px;
+            padding: 16px;
+            background: #fff9e6;
+            border-left: 4px solid #f39c12;
+            border-radius: 4px;
+        }
+
+        .hint-explanation h4 {
+            color: #e67e22;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+
+        .hint-explanation p {
+            color: #7f8c8d;
+            line-height: 1.5;
+            margin: 6px 0;
+        }
+
+        .explanation-section {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #f0e5c9;
+            display: none;
+        }
+
+        .explanation-section.show {
+            display: block;
+        }
+
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            padding: 25px 40px;
+            background: #ecf0f1;
+            border-radius: 0 0 8px 8px;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: #ecf0f1;
+            margin: 0 20px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #3498db;
+            transition: width 0.3s;
+        }
+
+        .results-screen h2 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .score-display {
+            text-align: center;
+            margin: 40px 0;
+        }
+
+        .score-percentage {
+            font-size: 4em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .score-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .score-card {
+            padding: 20px;
+            background: #ecf0f1;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .score-card-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .score-card-label {
+            color: #7f8c8d;
+            margin-top: 8px;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                border-radius: 0;
+            }
+
+            .header {
+                padding: 20px;
+                border-radius: 0;
+            }
+
+            .header h1 {
+                font-size: 1.5em;
+            }
+
+            .header p {
+                font-size: 0.9em;
+            }
+
+            .question-container,
+            .navigation,
+            .setup-screen,
+            .results-screen {
+                padding: 20px;
+            }
+
+            .stats {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+                padding: 15px;
+            }
+
+            .stat-value {
+                font-size: 1.5em;
+            }
+
+            .stat-label {
+                font-size: 0.8em;
+            }
+
+            .question-text {
+                font-size: 1.1em;
+            }
+
+            .option {
+                padding: 14px;
+                gap: 10px;
+                min-height: 48px;
+            }
+
+            .option-letter {
+                width: 28px;
+                height: 28px;
+                font-size: 0.9em;
+            }
+
+            .navigation {
+                padding: 15px;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .btn,
+            .nav-button {
+                width: 100%;
+                padding: 16px;
+                font-size: 1em;
+                min-height: 48px;
+            }
+
+            .setup-option input,
+            .setup-option select {
+                font-size: 16px;
+            }
+
+            .question-header {
+                flex-direction: column;
+                gap: 8px;
+                align-items: flex-start;
+            }
+
+            .score-percentage {
+                font-size: 3em;
+            }
+
+            .score-details {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .hint-explanation {
+                padding: 12px;
+                font-size: 0.95em;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .header h1 {
+                font-size: 1.3em;
+            }
+
+            .question-text {
+                font-size: 1em;
+            }
+
+            .stats {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+                padding: 10px;
+            }
+
+            .stat-value {
+                font-size: 1.3em;
+            }
+
+            .stat-label {
+                font-size: 0.75em;
+            }
+
+            .score-percentage {
+                font-size: 2.5em;
+            }
+
+            .question-container {
+                padding: 15px;
+            }
+
+            .option {
+                padding: 12px;
+                font-size: 0.95em;
+            }
+        }
+
+        .search-container {
+            margin: 30px 0;
+            padding: 20px;
+            background: #ecf0f1;
+            border-radius: 6px;
+        }
+
+        .search-container h3 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+            margin-bottom: 15px;
+        }
+
+        .search-results {
+            max-height: 300px;
+            overflow-y: auto;
+            background: white;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .search-results.has-results {
+            display: block;
+            border: 1px solid #ddd;
+        }
+
+        .search-result-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .search-result-item:hover {
+            background: #f8f9fa;
+        }
+
+        .search-result-item .result-collection {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 0.75em;
+            margin-right: 8px;
+        }
+
+        .search-result-item .result-text {
+            color: #2c3e50;
+            font-size: 0.95em;
+        }
+
+        .search-result-count {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>CN Quiz</h1>
+            <p>Computer Networks</p>
+        </div>
+
+        <div class="setup-screen active" id="setupScreen">
+            <h2 style="margin-bottom: 30px; color: #2c3e50;">Quiz Setup</h2>
+
+            <div class="setup-option">
+                <label>Select Collection:</label>
+                <select id="collectionSelect">
+                    <option value="all">All Topics (246 questions)</option>
+                    <option value="signaling">Signaling</option>
+                    <option value="topology">Network Topology</option>
+                    <option value="services">Services</option>
+                    <option value="packet-switching">Packet Switching</option>
+                    <option value="osi">OSI Model</option>
+                    <option value="protocols">Window Protocols</option>
+                    <option value="mac">MAC Layer</option>
+                    <option value="tcp">TCP</option>
+                    <option value="udp">UDP</option>
+                    <option value="ip">IP Protocol</option>
+                    <option value="routing">Routing</option>
+                    <option value="ethernet">Ethernet</option>
+                    <option value="dns">DNS</option>
+                    <option value="http">HTTP</option>
+                    <option value="general">General Concepts</option>
+                </select>
+            </div>
+
+            <div class="setup-option">
+                <label>Number of Questions:</label>
+                <input type="number" id="questionCount" min="10" max="200" value="50">
+            </div>
+
+            <div class="setup-option">
+                <label>Question Order:</label>
+                <select id="questionOrder">
+                    <option value="sequential">Sequential</option>
+                    <option value="random">Random</option>
+                </select>
+            </div>
+
+            <div class="search-container">
+                <h3>Search Questions</h3>
+                <input type="text" class="search-input" id="searchInput" placeholder="Type to search questions..."
+                    oninput="searchQuestions()">
+                <div class="search-result-count" id="searchCount"></div>
+                <div class="search-results" id="searchResults"></div>
+
+            </div>
+            <button class="btn" id="practiceResultsBtn" style="display:none; margin-top: 15px; width: 100%;"
+                onclick="startQuizWithResults()">
+                Practice All Results (<span id="resultCount">0</span> questions)
+            </button>
+
+            <button class="btn" onclick="startQuiz()">Start Quiz</button>
+        </div>
+
+        <div class="quiz-screen" id="quizScreen">
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="currentQ">1</div>
+                    <div class="stat-label">Current</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="totalQ">0</div>
+                    <div class="stat-label">Total</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="answered">0</div>
+                    <div class="stat-label">Answered</div>
+                </div>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+
+            <div class="question-container">
+                <div class="question-header">
+                    <span class="question-number" id="questionNumber"></span>
+                    <span class="collection-badge" id="collectionBadge"></span>
+                </div>
+                <div class="question-text" id="questionText"></div>
+                <div class="options" id="optionsContainer"></div>
+                <div class="hint-explanation" id="hintBox">
+                    <h4>Hint:</h4>
+                    <p id="hintText"></p>
+                    <div class="explanation-section" id="explanationSection">
+                        <h4>Explanation:</h4>
+                        <p id="explanationText"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="navigation">
+                <button class="btn" onclick="previousQuestion()" id="prevBtn">Previous</button>
+                <button class="btn" onclick="nextQuestion()" id="nextBtn">Next</button>
+                <button class="btn" onclick="finishQuiz()" id="finishBtn" style="display:none;">Finish Quiz</button>
+            </div>
+        </div>
+
+        <div class="results-screen" id="resultsScreen">
+            <h2>Quiz Results</h2>
+            <div class="score-display">
+                <div class="score-percentage" id="finalPercentage">0%</div>
+                <p style="color: #7f8c8d; margin-top: 10px;">Your Score</p>
+            </div>
+            <div class="score-details">
+                <div class="score-card">
+                    <div class="score-card-value" id="totalAnswered">0</div>
+                    <div class="score-card-label">Total Questions</div>
+                </div>
+                <div class="score-card">
+                    <div class="score-card-value" id="correctCount">0</div>
+                    <div class="score-card-label">Correct</div>
+                </div>
+                <div class="score-card">
+                    <div class="score-card-value" id="wrongCount">0</div>
+                    <div class="score-card-label">Wrong</div>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 30px;">
+                <button class="btn" onclick="restartQuiz()">New Quiz</button>
+                <button class="btn" onclick="reviewAnswers()">Review Answers</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const allQuestions = [
+            { q: "Common channel signaling provides that", o: ["The control apparatuses of the switching centers exchange signaling information in packet switching", "A different channel is associated with each channel dedicated to the transmission of user data signaling", "The signaling between the switching centers takes place by sharing a single channel via satellite"], c: 0, col: "signaling", hint: "Think about how signaling channels are organized", exp: "In the common channel signaling the user information travels on separate channels but with a single signaling channel used to control the signaling of all user channels. The channel signaling works in packet." },
+            { q: "The characteristics of a fully connected mesh topology are", o: ["High number of channels, good fault tolerance, easy routing", "High number of channels, good fault tolerance, difficult routing", "Low number of channels, bad fault tolerance, difficult routing"], c: 0, col: "topology", hint: "Consider direct connections between nodes", exp: "There is always a way in the fully connected mesh direct between each node." },
+            { q: "Conversational interactive telecommunication services are characterized by", o: ["Low probability of error in the transfer of information", "Transfer of information in real time", "Storage of information on the network and delivery to the recipient in a deferred time"], c: 1, col: "services", hint: "Think about real-time requirements", exp: "In conversational interactive services, communication takes place with the transfer of extreme to extreme information in real time." },
+            { q: "In packet-switched networks the factors that lead to the choice of small packets dimensions are", o: ["Lower incidence of control information, higher efficiency in the transfer of SDU's big dimensions", "Better chance of parallelization, less transfer delay, less chance of error on the bit", "Better chance of parallelization, less delay in packaging, less probability of package error"], c: 2, col: "packet-switching", hint: "Consider packetization and transmission efficiency", exp: "The length of the packets is determined by: possibility of parallelization (pipeline), delay of packaging, percentage of control information. Short packets favor transmission in parallel on different channels of packets of the same communication, short packets reduce the delay of packetization (important for voice traffic on the packet network), long packets reduce the percentage of control information." },
+            { q: "In the OSI model, the transport layer provides services", o: ["Building on services from the application layer", "Relying on the services provided by the network layer", "Relying on the services provided by the session level"], c: 1, col: "osi", hint: "Think of the ISO/OSI stack order", exp: "Think of the ISO / OSI stack." },
+            { q: "Which of the following statements conforms to the ISO / OSI reference model?", o: ["An (N) -entity and an (N-1) -entity can have the same address.", "One (N) -entity can be associated with two different (N-1) -addresses.", "Two (N) -entities can be associated with the same (N-1) -address."], c: 1, col: "osi", hint: "Consider entity-address relationships", exp: "Each entity is characterized by the abbreviation (address) of its own layer, so A and C result wrong and by exclusion the correct answer is B." },
+            { q: "In a Go-Back-N windowed protocol it may be convenient to increase the size of the transmission window (measured in number of data)", o: ["When the transmission speed increases at the same size of the data units and the same delays of transfer of data units between transmitter and receiver", "When the transmission speed decreases at the same size of the data units and the same delays of transfer of units between transmitter and receiver", "When the distance between transmitter and receiver decreases, therefore the transfer delays of the units data, without changing the transmission speed", "When the probability of channel error increases"], c: 0, col: "protocols", hint: "Consider efficiency formula and transmission time", exp: "Efficiency of a window protocol. Assuming we have n = k, we have = 1 + 2. Wt = k (1 + 2 * (tp / tx)). As the transmission speed increases, the transmission time tx decreases, by imposing an increase in Wt to keep the efficiency equal to k." },
+            { q: "A Go-Back-N windowed protocol does not require an increase in complexity with respect to a Stop-And-Wait in relation to", o: ["Amount of memory required by the transmitter", "Minimum amount of sequence numbers required to distinguish data units", "Amount of memory required at the receiver"], c: 2, col: "protocols", hint: "Compare receiver complexity", exp: "The Go-Back-N does not require an increase in complexity compared to the receive window at receiver. For the Stop and Wait = 1 and for the Go-Back-N = 1." },
+            { q: "The Aloha and S-Aloha protocols", o: ["To avoid interference between broadcasts of users sharing a broadcast channel assign to each user a predetermined time interval in which to transmit", "They do not implement any prior checking to avoid interference between user transmissions who share a broadcast channel; only in the case of interference (collision) is action taken by repeating the transmission after a fixed delay", "They do not implement any prior checking to avoid interference between user transmissions who share a broadcast channel; only in the case of interference (collision) is it intervened, repeating the transmission after a random delay"], c: 2, col: "mac", hint: "Consider collision handling mechanisms", exp: "Aloha has low efficiency because the nodes transmit without coordinating with each other, only in the event of a collision, a backoff is performed: the two (or more) stations that have collided wait for a time random before retransmitting the PDU. The random time serves to break the determinism and if in the case the two (or more) stations waited for the same time, a collision with probability 1 would again occur. In this case doubles the maximum random waiting time." },
+            { q: "The architecture of the Internet protocols is organized", o: ["In seven levels", "In four levels", "In six levels", "In a completely non-layered way"], c: 1, col: "internet", hint: "ARPA architecture", exp: "The Internet to date is based on the ARPA architecture consisting of 4 levels. The levels are: application, service, internetwork, network." },
+            { q: "The TCP receiver", o: ["Send cumulative acknowledgments (ACKs)", "Sends an acknowledgment (ACK) relating to each segment received", "Does not send feedback"], c: 0, col: "tcp", hint: "Consider TCP ACK mechanism", exp: "By definition, TCP uses window protocols that make use of cumulative ACKs." },
+            { q: "The header of the TCP segment, that is the PCI of the TCP protocol,", o: ["It is always of fixed size equal to 20 bytes", "It is of variable size depending on the options present", "It has a fixed size of 40 bytes"], c: 1, col: "tcp", hint: "Consider TCP options field", exp: "In the header of the TCP there is an Options field of variable size." },
+            { q: "The logical addresses on the Internet are", o: ["Determinants completely free from the system administrators of each subnet", "Organized in domains", "Completely free format"], c: 1, col: "ip", hint: "Think about IP address organization", exp: "See transparencies on IP." },
+            { q: "The routing protocol can be used between ASs (Autonomous Systems)", o: ["EGP (Exterior Gateway Protocol)", "RIP (Routing Information Protocol)", "OSPF (Open Shortest Path First)"], c: 0, col: "routing", hint: "Inter-AS vs intra-AS protocols", exp: "The exchange of information between routers belonging to different ASs takes place through the EGP-type routing protocol." },
+            { q: "In the OSI model, a (N) -connection", o: ["It can be realized through one or more (N-1) connections", "It is terminated by two (N-1) -CEPs", "It can be realized through one or more (N + 1) -connections", "It can only be achieved through multiple (N-1) -connections"], c: 0, col: "osi", hint: "Layer relationships in OSI", exp: "By definition an (N) -strate provides services to (N + 1) -strates. This means that its user (lo layer N + 1) before being able to use the service will have to request a connection. At an N layer they can match different N-1 connections." },
+            { q: "Compared to the 10 Mbit / s Ethernet standard, in the definition of 100Mbit / s Ethernet the MAC protocol", o: ["It has been modified to allow more efficient collision detection", "It has been modified by introducing a mechanism to avoid collisions, improve performance and support real-time services", "It has been kept unchanged, accepting the reduction of a factor of ten (approximately) called collision domain", "It has been kept unchanged, keeping the maximum size unchanged by increasing it by one factor ten the minimum size of the plot"], c: 2, col: "ethernet", hint: "MAC protocol changes in Fast Ethernet", exp: "See transparencies on MAC." },
+            { q: "The metric (cost) in a routing algorithm", o: ["Expresses the weight to assign to a (channel) link in the path selection", "It expresses the computational complexity of the algorithm", "Expresses the probability that the shortest path will be used"], c: 0, col: "routing", hint: "Path selection criteria", exp: "See transparencies." },
+            { q: "Advantages of virtual circuit-like services over datagram-like services in a network a packet switching are", o: ["Less packet delay, routing calculation for each packet", "Less variability of packet delays, maintenance of packet sequence, routing for each package", "Less variability of packet delays, maintenance of packet sequence, routing only when opening the connection"], c: 2, col: "packet-switching", hint: "VC characteristics vs datagram", exp: "The advantages of virtual circuit services over datagram services are: maintenance of the sequence (I always do the same path), less variability of delays (only delay of processing), routing only when the connection is opened." },
+            { q: "Which of the following statements is true about IEEE 802.1d Transparent Bridges?", o: ["The routing follows backward learning and flooding criteria", "Routing is based on the exchange of routing tables between bridges", "Routing always occurs in flooding mode"], c: 0, col: "bridges", hint: "Bridge learning mechanism", exp: "(Internet source)." },
+            { q: "Compared to Fast Ethernet at 100 Mb / s (100Base T), Ethernet at 1 Gb / s allows to respect the time constraints on collision recognition", o: ["By decreasing the distance between the nodes", "By imposing the optical fiber as the transmission medium", "Increasing the minimum size of PDUs"], c: 2, col: "ethernet", hint: "Collision detection timing", exp: "switching to 1Gb / s to maintain Transmission> RTT by acting on the times of propagation there would be a need for minimum distances between hosts (a few tens of meters), the only solution is to increase the minimum size of PDUs in order to increase transmission." },
+            { q: "Compared to sources of the CBR (Constant Bit Rate) type, sources of the VBR (Variable Bit Rate)", o: ["They have greater difference between maximum and minimum transmission speed", "They have more stringent requirements on the maximum delay", "They have more stringent requirements on the average delay"], c: 0, col: "services", hint: "Bit rate variability", exp: "CBR is used in videoconferencing (speed of 64kb / s). VBR is used for streaming and the file transfer (for the first order of Mb / s for the second order of kb / s to Gb / s)." },
+            { q: "End-to-end error recovery in the Internet environment, when present,", o: ["It is always and only carried out by the application processes", "It is carried out at the Transport level", "It is carried out at the Internet (network) layer", "It is not intended for any type of service"], c: 1, col: "tcp", hint: "End-to-end principle", exp: "End-to-end is one of the principles of computer network design and is applied on different network protocols such as UDP (Layer 4 Protocol, Transport Layer)." },
+            { q: "The POP3 protocol", o: ["It is used for blocking pop-ups in a web browser", "It is used for the exchange of e-mail messages between mail servers", "It can be used to transfer email messages from a server to an email client installed on a PC", "Use messages that always include encrypted authentication"], c: 2, col: "general", hint: "Email retrieval protocol", exp: "Post Office Protocol (POP) is a client-server type application layer protocol that has the task of allowing access by a client to an e-mail account present on a host server and download the e-mails of the account itself. The B refers to the SMTP protocol." },
+            { q: "What is meant by the collision domain in Ethernet?", o: ["The portion of the network within which the same collision is detected", "The number of bits in the packet header that can be damaged by a collision", "The set of nodes that interrupt the transmission due to a collision"], c: 0, col: "ethernet", hint: "Network segment definition", exp: "Collision domain: portion of the network where two frames collide." },
+            { q: "In an IP subnet (Logical IP Subnet)", o: ["Hosts share the same network prefix", "The network prefix is always made up of the first three bytes of the address"], c: 0, col: "ip", hint: "IP addressing structure", exp: "In a network, all subnets created must have the same network address. The B is incorrect given that the network prefix is not necessarily made up of the first 3 bytes." },
+            { q: "In the OSI reference model a (N) -PCI can contain", o: ["(N) -addresses", "(N + 1) -addresses", "(N-1) -addresses"], c: 0, col: "osi", hint: "Header content by layer", exp: "This is the header of that level which can only contain N-level addresses. It will be the N-SDU to contain (N + 1) addresses." },
+            { q: "The TCP protocol", o: ["Provides error detection on the data of each segment by means of a checksum", "Provides an error detection on the segment header only", "Does not provide error detection and recovery on data"], c: 0, col: "tcp", hint: "TCP error checking", exp: "TCP offers error checking functionality on received packets thanks to the checksum field contained in its PDU." },
+            { q: "The P / F (Poll / Final) bit of the frames in the LaPB 2 state protocol", o: ["Provides implicit confirmation on unconfirmed plots", "Allows you to request a confirmation from the receiver", "Speeds up the transmission of information"], c: 1, col: "protocols", hint: "HDLC P/F bit usage", exp: "The Poll and Final field is a single bit and has two uses. It is called Poll if used by the primary station to ask for a response from secondary stations, instead Final when used by a secondary station to indicate a reply when the broadcast is finished. It only has meaning if set to 1." },
+            { q: "Which of the following protocols does not perform delimitation functions of the data units?", o: ["LaPB (Link access Procedure Balanced), used in the ISDN B channel", "LaPF (Link access Producer to Frame-mode bearer services), used in Frame Relay networks", "PPP (Point-to-Point Protocol), used in domestic Internet access", "IEEE 802.2 LLC (Logical Link Control), used in local networks"], c: 3, col: "protocols", hint: "MAC vs LLC responsibilities", exp: "The delimiters are inserted later by the MAC protocol." },
+            { q: "What is required for Ethernet in full-duplex mode?", o: ["The ability to simultaneously receive and transmit packets", "The availability of fault protection techniques through two disjoint paths between each pair of knots", "Full support at both 10 Mbit / s and 100 Mbit / s speeds"], c: 0, col: "ethernet", hint: "Bidirectional communication", exp: "A full-duplex physical medium has the characteristic that transmission and reception take place on separate cables. This results in me being able to receive and transmit packets simultaneously." },
+            { q: "The characteristics of a tree topology are", o: ["Low number of channels, bad fault tolerance, easy routing", "Low number of channels, good fault tolerance, easy routing", "High number of channels, good fault tolerance, difficult routing"], c: 0, col: "topology", hint: "Tree structure properties", exp: "See slides Tree topology." },
+            { q: "IP version 4 addresses are:", o: ["Of fixed total length, made up of a variable length part that identifies the net and one part of variable length that identifies the host", "Of fixed total length, consisting of a fixed length part that identifies the net and one part of fixed length that identifies the host", "Of a variable length, composed of a part of variable length that identifies the net and of a variable-length portion that identifies the host"], c: 0, col: "ip", hint: "IPv4 address structure", exp: "IPV4 definition." },
+            { q: "In Store-And-Forward packet-switched networks, the use of PDUs (packets) of big dimensions:", o: ["It decreases the probability of losing information by mistake on the bits received", "Minimize the transfer delay because, as there is less overhead due to the control present in each PDU, the total amount of information to be sent is less", "It requires a larger header to allow the management of all the information contained in the PDU", "The overall information transfer delay increases because each node must receive the entire PDU before it can be sent on the next channel"], c: 3, col: "packet-switching", hint: "Store and forward delay", exp: "Sending large packets on Store-And-Forward nodes leads to a delay not negligible of the transfer of information. For this reason it is preferable to send packages of small dimensions in order to minimize storage time (Store)." },
+            { q: "A Selective Repeat protocol with a transmission window of size Wt and a window of receiving dimension Wr", o: ["It can work only if, being k the number of numbering bits, we have Wt + Wr <= 2^k", "It can only work if, being k the number of numbering bits, we have Wt <= 2^k", "It can work only if, being k the number of numbering bits, we have Wr <= 2^k"], c: 0, col: "protocols", hint: "Window size constraints", exp: "See Selective Repeat slides." },
+            { q: "The Point-to-Point Protocol (PPP)", o: ["Uses a Go-Back-N windowed protocol for data drive loss recovery", "Use the address field in data units to distinguish commands from responses", "It uses in a similar way to LaPB (ISDN channel B) the sequence 01111110 to delimit the data units"], c: 2, col: "protocols", hint: "PPP framing", exp: "See transparencies Encapsulating PPP PDUs." },
+            { q: "Which of the following features are possible thanks to Store-And-Forward operation in a packet network?", o: ["The possibility of having different transmission speeds between the different channels attested to the same switch.", "The reduction of information transfer delays through a switching node.", "The reduction in the size of packet headers.", "The possibility of using Forward Error Correction channel encodings"], c: 0, col: "packet-switching", hint: "Speed adaptation capability", exp: "Ability to adapt to channels with different capacities." },
+            { q: "The difference between teleservices, bearer services and supplementary services lies in the fact that", o: ["While bearer services only offer information transfer between user-network interfaces, i teleservices involve the functions of the user equipment according to pre-established protocols; services On the other hand, additional ones modify or integrate a carrier service and a teleservice", "While teleservices only offer the transfer of information between user-network interfaces, services carriers involve the functions of the user equipment according to pre-established protocols; additional services are special services for data transfer", "While bearer services only offer information transfer between user-network interfaces, i teleservices involve the functions of the user equipment according to pre-established protocols; services additional are special services for data transfer"], c: 0, col: "services", hint: "Service classification", exp: "Bearer services are the services offered by the telephone line. It is called carrier because it is a essential service without which we cannot do all the other teleservices. It provides the ability to transmission of signals between user-network interface. Teleservices are services enabled by bearer services. They provide the complete possibility of communication between users according to pre-established protocols. Services supplementary supplement or modify one or more basic services." },
+            { q: "According to the OSI model, the functions in a telecommunications network are", o: ["Operations available on a service interface", "The rules of interaction between entities belonging to the same architectural layer", "Operations carried out within an architectural layer"], c: 2, col: "osi", hint: "Function definition in OSI", exp: "B is the definition of communication protocol: In a network, the rules that define the interaction between elements of a network are called protocols communication." },
+            { q: "Consider a transmitter host using the TCP protocol and a speed receiver infinite, that is, it always declares the maximum available value as the reception window. Given a transmitter current window of size equal to 10 segments, with a maximum receiver window equal to 20 segments, when the transmitter receives a segment containing an ACK from the side of the receiver, which of the following situations is possible?", o: ["The current window at the transmitter becomes 3 segments", "The current window at the transmitter becomes 51 segments", "The current window at the transmitter becomes 11 segments", "The current window at the transmitter becomes 13 segments"], c: 2, col: "tcp", hint: "TCP window growth", exp: "Assuming that the ACK received is the tenth of that transmission and assuming a TCP with Congestion Avoidance, then the cwnd increases by +1 segments upon receiving all ACKs." },
+            { q: "The Domain Name System (DNS)", o: ["Allows you to assign an Ethernet address to a host based on its IP address", "Realize in OSI terms a mapping function between (3) -addresses and (2) -addresses", "Allows an application to know the IP address of a website whose logical name is known", "Lets you know the physical location of an Internet host"], c: 2, col: "dns", hint: "Name to IP resolution", exp: "DNS application layer protocol consisting of 2 fundamental elements: the structure hierarchical structure and the application protocol to interact with this hierarchical structure. DNS is a system that allows us to convert a logical website name into an IP address." },
+            { q: "Given a number of nodes and a number of channels, a T1 topology for which the average distance between nodes is smaller than another T2 topology, in the presence of uniformly distributed traffic,", o: ["It allows the same amount of traffic to be disposed of on the channels", "Allows you to dispose of less traffic on the channels", "Allows you to dispose of a greater amount of traffic on the channels"], c: 2, col: "topology", hint: "Average distance and throughput", exp: "If the average distance decreases, the Throughput increases. For uniform traffic and topologies regular, disposable traffic is inversely proportional to the average distance." },
+            { q: "The piggybacking technique in window protocols consists of the possibility of", o: ["Return any data units that have suffered transmission errors to the transmitter", "Concatenate multiple hits in a data unit", "Carrying feedback information and user data in the same data unit", "Have the receiver explicitly report any loss of data units to the transmitter"], c: 2, col: "protocols", hint: "ACK optimization", exp: "Piggybacking allows, in the case of bidirectional information flows, the possibility of write the acknowledgment information (ACK) in the header of the PDU traveling in the opposite direction. This allows for ACK savings." },
+            { q: "Distinguishing Commands and Responses in Layer 2 Protocol Frames LaPB aims to", o: ["Find out if a Poll bit or a Final bit has been sent", "Understand who is the recipient of the plot", "Distinguish supervision frames from information frames"], c: 2, col: "protocols", hint: "LAPB frame types", exp: "The LAPB protocol belongs to the HDLC family of protocols. It has a frame of supervision used for error and flow control for example when you have to send only commands, responses and confirmations (no data). This frame by definition does not have a data field." },
+            { q: "In a local network (LAN) on a bus topology with CSMA access protocol, the quantities of time for which various nodes detect a collision between the transmissions of two particular nodes", o: ["It is greater for the nodes near the ends of the bus and less for the nodes in the center of the bus", "It is the same for all nodes in the network", "It depends on the position of the nodes with respect to the transmitters of the packets that generate the collision"], c: 2, col: "mac", hint: "Collision detection timing", exp: "See slides CSMA." },
+            { q: "The header of a data packet in a packet-switched network with datagram service contains", o: ["The addresses of the source and destination node", "The address of the destination node and a connection identifier", "A connection identifier", "The address of the source node and a connection identifier"], c: 0, col: "packet-switching", hint: "Datagram header fields", exp: "See slides IP datagram format." },
+            { q: "An IP router after calculating the route", o: ["Change the source and destination IP addresses of the datagram", "Edit the Time To Live and Header Checksum fields in the datagram header", "Only edit the Time To Live field in the datagram header"], c: 1, col: "ip", hint: "Router processing of datagrams", exp: "If I change the Time To Live accordingly I have to change the Header Checksum as well otherwise I would be given an error. This leads me to exclude the C, while the A makes no sense as answer." },
+            { q: "An Ethernet card in a switch processes (that is, it reads and decides whether and how to route)", o: ["Only packets with broadcast destination MAC address", "All packets, regardless of the destination address", "Only packets with unicast destination MAC address equal to that of the switch", "Only packets with multicast destination MAC address"], c: 1, col: "ethernet", hint: "Switch operation mode", exp: "See switch operation." },
+            { q: "Which of the following statements is true? A host connected to the Internet, in the moment where he wants to transmit / receive data to / from any other host on the Internet, he must know", o: ["Your IP address and its mask, your MAC address, the IP address of the default router, the IP address of a DNS", "Your MAC address only", "Only your IP address"], c: 0, col: "ip", hint: "Required network configuration", exp: "Fonte Marchetto." },
+            { q: "By commutation we mean", o: ["The exchange of information concerning the control and management of a telecommunications network", "The transfer of information from one point to one or more other points", "The process of interconnecting resources for the time necessary for communication"], c: 2, col: "general", hint: "Switching definition", exp: "The C represents the circuit switching! There control information." },
+            { q: "In the OSI model, the network layer provides services", o: ["Building on the services provided by the application layer", "Based on the services provided by the transport layer", "Relying on the services provided by the link layer"], c: 2, col: "osi", hint: "Network layer position", exp: "The network layer is above the connection layer." },
+            { q: "In a real mobile radio channel, the fading phenomenon consists in:", o: ["Decrease in received power, caused by the distance between transmitter and receiver", "Rapid variation of the received power, caused by sources operating at the same frequency", "Reduction of the received power, caused by atmospheric sources such as rain and snow", "Rapid variation of the received power, caused by the presence of moving obstacles"], c: 3, col: "general", hint: "Mobile channel effects", exp: "See slides Real (mobile) radio channel." },
+            { q: "In the IP header, or in the PCI of the IP protocol, they are mandatory contents", o: ["The IP address of a source and destination", "The port of a source and destination", "The Window field that allows the receiver to report the current size of the window reception to the transmitter"], c: 0, col: "ip", hint: "Essential IP header fields", exp: "See slides IP datagram format." },
+            { q: "The IP protocol", o: ["Guarantees error detection only on the datagram header", "Guarantees error detection on the header and the content of the datagram", "It does not provide any kind of error protection", "Guarantees error detection only on the content of the datagram"], c: 0, col: "ip", hint: "IP checksum coverage", exp: "The Header Checksum field (16 bits) is used to verify that the IP header has arrived intact at destination. If the header changes during transport, the checksum is different and the IP protocol understands that there has been an error. Note that the checksum checks the integrity of the header only, and not of the data transported." },
+            { q: "The Go-Back-N protocol is more complex than the Stop-And-Wait protocol due", o: ["The greater complexity of the transmitter", "The greater complexity of the receiver", "The greater complexity of both the receiver and the transmitter"], c: 0, col: "protocols", hint: "Transmitter window management", exp: "Since Go-Back-N and Stop-And-Wait have nearly the same complexity at the receiver, the transmitter, it is one larger than the other due to the transmission window being for the former greater than one while for the second it is equal to one." },
+            { q: "The use of cookies in the HTTP protocol allows you to", o: ["Associate multiple requests made by the same browser or user", "Cache the responses received", "Download all the objects contained in a page by opening a single TCP connection", "Send the response to the client using different fragments (Chunked Transfer)"], c: 0, col: "http", hint: "Session state management", exp: "See slides cookies." },
+            { q: "In a fully connected mesh topology with N nodes, the number of channels bidirectional is equal to", o: ["N (N-1) / 2", "2N", "N-1", "N"], c: 0, col: "topology", hint: "Complete graph edges", exp: "See slides Knitted topology." },
+            { q: "The IP protocol provides a service", o: ["Unreliable (i.e. no delivery guarantee) and connectionless", "Reliable (i.e. with delivery guarantee) and connectionless", "Unreliable (i.e. without delivery guarantee) and connection oriented"], c: 0, col: "ip", hint: "IP service type", exp: "IP is a connectionless and best effort packet protocol, which that is, it does not guarantee any reliable form of communication in terms of error control, control flow and congestion control." },
+            { q: "Compared to the IP protocol, the UDP protocol", o: ["It adds nothing", "Adds the ability to carry messages by distinguishing between different application processes on the same host", "It allows a reliable transport of information"], c: 1, col: "udp", hint: "UDP additional functionality", exp: "UDP is by definition unreliable (connectionless), it performs multiplexing and demultiplexing." },
+            { q: "Which of the following line encodings is more efficient, ie requires less bit rate physically high at the same rate of information transmitted?", o: ["4B5B encoding", "64B66B encoding", "8B10B encoding"], c: 1, col: "general", hint: "Encoding overhead comparison", exp: "If every 4B I send 5B, to keep a constant Throughput I have to increase the speed by transmission of a factor of 5/4, same thing for the others. A 64/66 encoding allows me to increase by one very small factor 66/64, so it requires a lower bit rate. (1.03 times the initial bit rate, compared to 1.25 of the other 2 encodings.)" },
+            { q: "The CIDR (Classless Inter Domain Routing), based on the use of netmasks (masks) in then rizzi IP, is a technique used in order to", o: ["Decrease the convergence time of routing protocols", "Use the IP address space efficiently", "Avoid the formation of routing loops in the route"], c: 1, col: "ip", hint: "Address allocation optimization", exp: "See transparencies." },
+            { q: "The DSL access network separates data and voice on the same transmission medium between the devices user and control panel devices using:", o: ["Time multiplexing", "Multiple access to frequency division", "Multiple access to time division", "Frequency multiplexing"], c: 3, col: "general", hint: "ADSL separation technique", exp: "In fact, an adsl filter is used both on the user side and on the central side to divide in voice and data frequency and do not disturb each other. If you go and see, an adsl filter is composed of a low-pass filter for speech." },
+            { q: "The Stop-And-Wait protocol", o: ["It can only work using more than one numbering bit", "It can work using a number of numbering bits greater than or equal to 1", "It can only work in using a single numbering bit", "It can only work using fewer numbering bits than the window size transmission"], c: 1, col: "protocols", hint: "Minimum sequence numbers", exp: "By definition, the chances of malfunctions are reduced in the Stop-And-Wait protocol using a greater number of bits for numbering or a maximum life time for PDUs and ACK." },
+            { q: "In a tree topology with N nodes, the number of bidirectional channels is equal to", o: ["N", "N-1", "2N", "N (N-1) / 2"], c: 1, col: "topology", hint: "Tree structure edges", exp: "See slides Tree Topology." },
+            { q: "In the UDP header, or in the PCI of the UDP protocol, they are mandatory content", o: ["The value of the Maximum Segment Size negotiated between transmitter and receiver", "The checksum field, for error detection", "Some flags (in the CODE field) for opening and closing the connection"], c: 1, col: "udp", hint: "UDP basic services", exp: "The UDP provides only the basic transport layer services, namely: multiplexing of connections and error checking by means of a checksum inserted in the packet header." },
+            { q: "The transport layer on the Internet", o: ["Provides reliable information transport if UDP protocol is used", "It only provides unreliable transportation", "Always provides reliable information transport", "Provides reliable information transport if using the TCP protocol"], c: 3, col: "tcp", hint: "TCP vs UDP reliability", exp: "TCP is a transport layer packet network protocol belonging to the suite of internet protocols that deals with transmission control or making data switching reliable network between sender and recipient." },
+            { q: "In a routing table of an IP router there is a mask in which the first 24 bits (the most significant) are 1 and the last 8 bits (the least significant) are 0. Which of the following statements is true?", o: ["The mask can be associated with a subneted class B address", "The mask is definitely associated with a subneted class A address", "The mask cannot be associated with a class C address"], c: 0, col: "routing", hint: "Subnet mask interpretation", exp: "The mask is certainly associated with a subneted class C address, it can be associated with a subneted class B address." },
+            { q: "A Go-Back-N protocol with a transmission window of size Wt", o: ["It can only work using a number of numbering bits greater than or equal to log2 (Wt)", "It can only work using a number of numbering bits greater than or equal to log2 (Wt-1)", "It can only work using a number of numbering bits greater than or equal to log2 (Wt + 1)"], c: 2, col: "protocols", hint: "Sequence number requirement", exp: "By definition Go-Back-N admits Wt <2 ^ k as the transmission window. That is, Wt <= 2 ^ k-1; Wt + 1 <= 2 ^ k; k> = log2 (Wt + 1)" },
+            { q: "ADSL (Asymmetric Digital Subscriber Line) technology", o: ["It was mainly designed to provide a voice / data access service to a user residential that mainly accesses the Web as a client", "It was mainly designed to allow interconnection of local networks over large distances", "It has been designed primarily to provide a purely data access service to a web services that has one or more web servers"], c: 0, col: "general", hint: "ADSL use case", exp: "See transparencies ADSL." },
+            { q: "The quality characteristics required by a telephony service are:", o: ["Transfer of information with a maximum delay of the order of hundreds of milliseconds and jitter extremely low delay; bit rate of the order of tens of kbit / s; probability of error not more than a few percentage units; probability of block not exceeding a few percentage units", "Transfer of information with a maximum delay of the order of tens of seconds; chance negligible error; negligible block probability", "Transfer of information with a maximum delay of the order of hundreds of milliseconds and jitter extremely low delay; bit rate of the order of tens of Mbit / s; probability of error not more than a few percentage units; probability of block not exceeding a few percentage units"], c: 0, col: "services", hint: "Telephony QoS parameters", exp: "See slides Quality indices (telephony)." },
+            { q: "In the original IP routing, ie without the use of masks, the choice of the interface of output on which to forward a packet is based", o: ["The full IP address (net_id + host_id) of the recipient", "On the network part (net_id) of the recipient's IP address", "Only on the host (host_id) part of the recipient's IP address"], c: 1, col: "routing", hint: "Classful routing", exp: "To choose where to forward the packet, you just need to know the net_id (network id) of the recipient." },
+            { q: "The DNS (Domain Name Service):", o: ["To increase the reliability and responsiveness of the system uses a set of caches, but each resolution must however always reach the authoritative server for the domain to which the first name", "It is used by operators for the sale of domain names to their customers in need of create public servers", "It is based on a system of hierarchical servers, each responsible for naming a particular zone", "Represents a product to distribute the load on multiple routers within the local network"], c: 2, col: "dns", hint: "DNS architecture", exp: "The DNS (Domain Name Service) is a system used for resolving the names of the nodes of the network (host) in IP addresses. The service is implemented through a distributed database, consisting of DNS servers." },
+            { q: "Which of the following statements in the comparison between the Aloha and Slotted-Aloha protocols is false?", o: ["Slotted-Aloha allows a better exploitation of the capacity of the transmission medium", "The performance of Aloha is less dependent than Slotted-Aloha on propagation delays", "Aloha is simpler to implement by not requiring slot synchronization"], c: 1, col: "mac", hint: "Protocol comparison", exp: "The Slotted Aloha protocol adds another one to the Aloha protocol characteristic, that is, that time is divided into discrete intervals called slots. The consequence of this characteristic is that two transmissions either completely collide within the same slot or they do not collide at all; the problem of partial collisions present in Aloha is eliminated." },
+            { q: "In the case of packet switching", o: ["The switching function allocates to the interlocutors a subset of the network resources with which one or more circuits are set up for connecting the user terminals; the resources will have to be issued if they are necessary for the establishment of other circuits", "The switching function allocates to the interlocutors in exclusive use a subset of the resources of network with which one or more circuits are set up for connecting the user terminals; resources are issued only at the end of the communication", "The switching function does not allocate a subset of the Network resources; all network resources are always available for packet transmission; the packages they wait in special queues for the necessary resources to become available"], c: 2, col: "packet-switching", hint: "Resource allocation in packet switching", exp: "See transparencies Packet switching." },
+            { q: "In the header (header) UDP, or in the PCI of the UDP protocol are mandatory content", o: ["The TTL (Time To Live) field that allows the elimination of the packets they have from the network too many routers went through", "The source and destination port", "The source and destination IP address"], c: 1, col: "udp", hint: "UDP header essentials", exp: "See transparencies UDP: segment header." },
+            { q: "Internet routing tables", o: ["They indicate the sequence of routers to cross to reach a certain destination", "They only indicate the next router to cross to reach the destination", "They indicate the autonomous system sequence to cross to reach a certain destination"], c: 1, col: "routing", hint: "Next-hop routing", exp: "See sheets IP routing (next hop)." },
+            { q: "Data transfer between two application processes in the OSI model occurs by involving", o: ["Only two entities of the application layer, one for each of the two systems", "At least one entity for each of the seven levels in both systems", "An entity in each system, independent of the level to which they belong"], c: 1, col: "osi", hint: "Full stack involvement", exp: "As the application layer is the highest in the ISO-OSI stack, the transmitter must first pass all 6 lower levels and then at the receiver go up all the levels until the last one." },
+            { q: "Consider two LANs Ethernet A and B, connected by a switch B1 and a router R1 (B1 and R1 are in parallel between the two LANs). Suppose that the switch and the router have both ports active and know all the addresses (MAC and IP respectively) of the hosts connected to the two LANs. When a host connected to LAN A broadcasts a ARP packet to get the MAC address of router R1, which of the following statements is true?", o: ["The packet is forwarded on LAN B only by router R1", "The packet is forwarded on LAN B only by switch B1", "The packet is forwarded on LAN B either by the switch or by the router, depending on the address value Destination MAC contained in the packet", "The packet is forwarded on LAN B by both router R1 and switch B1"], c: 1, col: "general", hint: "Broadcast handling", exp: "The router receives the ARP and recognizes that it is intended for it via the payload. So don't forward it but it replies to the host that requested the MAC. The switch, being the ARP packet sent in broadcast, is forwards to all its gates except the one from which it received it." },
+            { q: "The SMTP protocol", o: ["It operates on the UDP protocol, as emails are usually short", "It is based on messages that always include encrypted authentication", "It is used for the delivery of outgoing e-mail messages from a client to a given server", "It is used to transfer e-mail messages from a server to a client installed on a PC"], c: 2, col: "general", hint: "Email sending protocol", exp: "SMTP is the protocol used to send and receive mails from e-mail servers. THE clients use SMTP only to send the message to the mail server which takes care of sending the message same." },
+            { q: "In the case of using a Stop-And-Wait protocol on a non-sequential channel", o: ["It is always handled without problems", "It can give rise to malfunctions of the protocol, to the point of causing loss of information and blocking of algorithms", "It can give rise to malfunctions of the protocol, to the point of causing loss of information, but not the blocking of algorithms"], c: 1, col: "protocols", hint: "Non-sequential channel issues", exp: "On the slides there is an example of algorithm blocking and information loss, happens with numbering bits k = 1." },
+            { q: "An (N-1) -protocol allows interaction", o: ["Between a (N + 1)-entity and a (N-1)-entity", "Between two (N-1)-entities", "Between any two entities, regardless of level, as long as they belong to different systems", "Between two (N)-entities"], c: 1, col: "osi", hint: "Protocol peer interaction", exp: "Protocols by definition work with entities at the same level as the protocol" },
+            { q: "In the case of circuit switching", o: ["The switching function allocates to the interlocutors a subset of the network resources with which one or more circuits are set up for connecting the user terminals; the resources will have to be issued if they are necessary for the establishment of other circuits", "The switching function allocates to the interlocutors in exclusive use a subset of the resources of network with which one or more circuits are set up for connecting the user terminals; resources are issued only at the end of the communication", "The switching function does not allocate a subset of the Network resources; all network resources are always available for packet transmission; the packages they wait in special queues for the necessary resources to become available"], c: 1, col: "packet-switching", hint: "Circuit switching resource allocation", exp: "See transparencies Switching to circuit." },
+            { q: "Version 4 IP addresses of class C characterize:", o: ["Multicast communications", "(Few) networks with a large number of hosts", "(Many) networks with a small number of hosts"], c: 2, col: "ip", hint: "Class C address space", exp: "Class C addresses are similar to classless addresses with mask / 24. This indicates a high number of networks and low number of hosts (256 hosts per network)." },
+            { q: "The CSMA and CSMA-CD protocols", o: ["They try to avoid interference between broadcasts of users sharing a broadcast channel through a preventive listening to the status of the channel; the transmission can start only if the channel is listened to free", "They do not implement any prior checking to avoid interference between user transmissions who share a broadcast channel; only in the case of interference (collision) is action taken by repeating the transmission after a random delay", "They try to avoid interference between broadcasts of users sharing a broadcast channel through a preventive listening to the status of the channel; the transmission can start only if the channel is actually free"], c: 0, col: "mac", hint: "Carrier sense mechanism", exp: "See slides CSMA." },
+            { q: "By reporting is meant", o: ["The transfer of information from one point to one or more other points", "The exchange of information concerning the control of a telecommunications network", "The process of interconnecting resources for the time necessary for communication"], c: 1, col: "signaling", hint: "Network control signaling", exp: "See slides on Reporting." },
+            { q: "The MIME protocol allows", o: ["To have data encoded differently within the e-mail message", "To reserve the resources on the network so that an email message with a multimedia file attached can reach the destination with guaranteed quality", "To transmit useful information to the recipients of the e-mail to monitor the quality of the transmission", "Check the playback of a multimedia file downloaded from the network"], c: 0, col: "general", hint: "Email multimedia support", exp: "See slides Message format: multimedia extensions." },
+            { q: "Statistical multiplexing means", o: ["A fixed frequency multiplexing scheme in which the band assigned to the different information flows it is proportional to the transmission speed", "A multiplexing scheme that provides for a random choice between frequency multiplexing and multiplexing over time", "A multiplexing scheme that does not foresee a predetermined allocation of resources transmissive to information flows"], c: 2, col: "general", hint: "Dynamic resource allocation", exp: "The C corresponds to the definition of statistical multiplexing." },
+            { q: "What is the order of magnitude of the maximum transmission speed on an optical fiber?", o: ["1 Tbit / s", "1 kbit / s", "1 Mbit / s", "1 Gbit / s", "1 bit / s"], c: 0, col: "general", hint: "Fiber optic capacity", exp: "See transparencies The optical fiber." },
+            { q: "If a router receives a correct TCP packet, encapsulated in an IP packet with header destined for a non-existent TCP port (for which there is no application process in wait)", o: ["Discard it and send an ICMP packet to the destination", "Pass it to a default application process that handles all TCP packets for which no there is an application process available", "Ignore the TCP port value and send the packet", "Discard it and send an ICMP packet to the source"], c: 2, col: "general", hint: "Router layer processing", exp: "Since the TCP packet is encapsulated in an IP packet, the latter will not be able to detect the TCP port error, so the correct answer is C." },
+            { q: "The increment of the current window of the TCP transmitter", o: ["It is regulated only by the receiver", "It is regulated only by the slow-start congestion control phase", "It is regulated by the congestion control phase called slow-start and congestion avoidance"], c: 2, col: "tcp", hint: "TCP window control phases", exp: "See TCP congestion control slides." },
+            { q: "The CSMA and CSMA-CD protocols admit 1-persistent and non-persistent versions", o: ["In the case of the 1-persistent version, if listening to the channel indicates that it is busy, the attempt is proposed for a random delay; in the case of non-persistent versions, if listening to the channel indicates that it is busy, the transmission starts as soon as the current transmission ends", "In the case of the non-persistent version, if listening to the channel indicates that it is busy, the attempt is proposed for a random delay; in the case of 1-persistent versions, if listening to the channel indicates that it is busy, the transmission begins as soon as the current transmission ends", "In both cases, if listening to the channel indicates that it is busy, the transmission attempt it is postponed with a random delay"], c: 1, col: "mac", hint: "Persistence strategy", exp: "See slides CSMA." },
+            { q: "Suppose that between a transmitter and a receiver they implement an ARQ scheme (Automatic repeat request) of the Go-Back-N type the time that elapses between the start of the transmission of a data unit and the end of receipt of the corresponding acknowledgment is constant and greater than the time necessary to transmit the information that can be stored in the transmission window. In this situation, the increase of the transmission speed on the channels that connect the transmitter to the receiver", o: ["It decreases the amount of information transferred on average in the unit of time between the transmitter and the receiver", "It fails to increase the amount of information transferred on average in the unit of time between transmitter and receiver", "Increases the amount of information transferred on average in the unit of time between the transmitter and the receiver"], c: 2, col: "protocols", hint: "Speed and efficiency relationship", exp: "n = Wt / (1 + 2 (Tp / Tx)) => at higher speeds, Tx decreases and n (efficiency) increases." },
+            { q: "In the OSI model, the delimitation of frames, ie the ability to identify on a channel the end of a packet, is a function:", o: ["Performed by all OSI levels", "Typical of the level or sub-level adjacent to the physical level", "Exclusive to the network level"], c: 1, col: "osi", hint: "Data link layer responsibility", exp: "Level 2 takes care of this." },
+            { q: "In the event of a loss of segments identified by receiving three hits, the current window size of the reno TCP transmitter", o: ["It is brought to half the size of the receiver window", "It is brought back to the initial value, equal to one segment", "It is placed in the middle of the current value (to be precise, in half of the current value plus a segment)"], c: 2, col: "tcp", hint: "TCP Reno fast recovery", exp: "This is how TCP reno works." },
+            { q: "Frame Relay technology predicts", o: ["The transfer of fixed-size data units in non-connection-oriented mode", "The transfer of data units of fixed size on virtual circuits", "The transfer of data units of variable size on virtual circuits"], c: 2, col: "general", hint: "Frame Relay characteristics", exp: "See Frame Relay slides." },
+            { q: "The Network Address Translation (NAT) Mechanism", o: ["Realizes in OSI terms a mapping function", "Can modify the IP addresses of the packets", "Allows you to access to set the logical address of a host to the IP address"], c: 1, col: "general", hint: "NAT address modification", exp: "See slides NAT." },
+            { q: "In the absence of other packets, the minimum time it takes for a packet to traverse the switch operating in store-and-forward mode", o: ["It grows as the packet transmission speed increases", "It grows as the distance between the source and destination of the packet increases", "It grows as the number of bits of which the packet is composed increases"], c: 2, col: "packet-switching", hint: "Store and forward delay", exp: "See Store and forward slides." },
+            { q: "The PING application program", o: ["It uses ICMP protocol messages to determine the path followed to reach a host belonging to the internet", "Use a TCP protocol option to check the connectivity of a host belonging to the network Internet", "It uses ICMP protocol messages to check the connectivity of a host belonging to the network Internet"], c: 2, col: "general", hint: "ICMP echo request/reply", exp: "See transparencies of the PING command." },
+            { q: "A network topology with N nodes and M unidirectional channels is given. Each channel has capabilities C Mbit / s. The routing algorithm is such as to evenly distribute traffic over the network channels. The average number of channels traversed by a packet in the path from the source to the destination is equal to D. The maximum amount of traffic disposed of by the network increases if:", o: ["Decreases C to equal N, M and D.", "Decreases M to equal N, D and C", "Decreases D to equal N, M and C", "Decreases N to equal D, M and C"], c: 2, col: "general", hint: "Average distance effect", exp: "if the average distance decreases, with the same channel capacity, the traffic disposed of should increase." },
+            { q: "Statistical multiplexing", o: ["Can only be used in connectionless networks", "It is used in telephone networks because it is closely associated with the use of constant speed channels", "It consists in sharing the same resource (transmission channel, memory device, etc.) by traffic sources that use it on an instantaneous need", "Can only be used in connection oriented networks, but not circuit switched"], c: 2, col: "general", hint: "On-demand resource sharing", exp: "By definition in statistical multiplexing the same resource can be used in frequency or in time to multiple sources, betting on the fact that they will not use them at the same time." },
+            { q: "In a packet-switched network operating in store-and-forward mode, a larger data unit size", o: ["The routing complexity of each data unit increases", "Increases the time that elapses from when a data unit reaches the input of a switch a when this leaves the switch", "Increase the number of operations that must be performed by a switch to transfer the same total amount of user information"], c: 1, col: "packet-switching", hint: "Processing time increase", exp: "Long packets lead to a longer store time by the receiving node." },
+            { q: "Congestion control in the TCP protocol", o: ["It is not available", "It is based on an autonomous decision by the transmitter based on any feedback (ACK) duplicates and on the expiry of the time-out", "It is based on the signaling by the receiver of the available reception window"], c: 1, col: "tcp", hint: "Sender-based control", exp: "For congestion control I am going to increase by a maximum segment size each round trip time the size of my CWND until I see that there is a leak (time out). For making this increment increases the current size of the CWND by 1 for each ACK received." },
+            { q: "Window protocols are also called ARQ (Automatic Retransmission reQuest) because", o: ["In case of arrival of an incorrect packet, the receiver requests retransmission", "If an ACK fails to return, the receiver requests retransmission", "The expiration of the timeout at the transmitter corresponds to an automatic request for retransmission"], c: 2, col: "protocols", hint: "Automatic retransmission mechanism", exp: "see window protocols slide" },
+            { q: "In the case of common channel signaling", o: ["A signaling channel corresponds to each channel for the transfer of user information", "A single signaling channel is used to control several transfer channels user information; the signaling channel operates in packet mode", "A single signaling channel is used to control several transfer channels user information; the signaling channel operates in circuit mode"], c: 1, col: "signaling", hint: "Shared signaling channel", exp: "in the common channel signaling the user information travels on separate channels but with a single signaling channel used to control the reporting of all user channels. The channel signaling works in packet." },
+            { q: "In the current state of technology, it is possible to transmit information without amplification along the transmission line over greater distances using", o: ["The Hertzian channel (radio, satellite)", "Optical fibers", "The twisted pairs", "Coaxial cables"], c: 0, col: "general", hint: "Transmission medium range", exp: "B is wrong, optical fiber: total immunity from electromagnetic disturbances, low attenuation (~ 0.1dB / km), wavelength dependent, requires cables with redundant optical amplifiers every 30/50 Km. The right answer is A." },
+            { q: "The (N + 1) -directory function associates", o: ["An (N + 1) -address to an (N) -address", "A (N + 1) -title to an (N) -address", "A (N + 1) -title to an (N + 2) -address"], c: 1, col: "osi", hint: "Directory function mapping", exp: "There is an N level function called (N) directory which establishes a correspondence between the (N) titles and the (N-1) addresses of the (N-1) SAPs through which the (N) entities access the (N-1) services. Being the (N + 1) directory the answer should therefore be B." },
+            { q: "The preamble prepended to IEEE 802.3 (Ethernet) data units is required for", o: ["Allow to keep the network synchronous", "Allow the synchronization of repeaters and receivers encountered on the local network", "Allow repeaters to retransmit data drives at the same rate at which they were received"], c: 1, col: "ethernet", hint: "Clock synchronization", exp: "Preamble (of 7 bytes): each of these first 7 bytes has the value 10101010 and are used for Wake up the adapters of the receiver and synchronize the oscillators with those of the transmitter." },
+            { q: "If a router detects an incorrect checksum on an IP packet, and therefore a potential error on the IP addresses contained in the packet, during the routing phase", o: ["Discard it and send an ICMP packet to the source only", "It discards it and sends an ICMP packet to both the source and the destination", "Discards it without reporting it to any other network entity", "It still forwards it to the destination, however sending an ICMP packet to the source for report the error"], c: 2, col: "ip", hint: "Silent discard policy", exp: "The IP checksum header is a field used for header error checking." },
+            { q: "In the OSI model, which of the following functions is performed by session-level entities?", o: ["The routing of the data units in a type that is not completely connected", "The choice of data representation syntax for a work session", "The definition of synchronization points in a data unit stream"], c: 2, col: "osi", hint: "Session layer tasks", exp: "The tasks of the session level are: possibility of intervention on dialogue between peers, if there are errors in the connection the session is restored using synchronization points, task management." },
+            { q: "The complexity of the routing procedures used, within a node, for forwarding information has the greatest influence on the performance of a network in the case of", o: ["Packet switching without virtual circuits (datagram mode)", "Packet switching with virtual circuits", "Circuit switching"], c: 0, col: "routing", hint: "Datagram routing complexity", exp: "In the case of datagrams (no virtual circuits), the pair must be identified in each packet source / destination thing which leads to a greater complexity of the performance of a network node. In the case of virtual circuits instead, it is sufficient to identify the virtual circuit. The source / destination pair is used only when opening the circuit." },
+            { q: "The LLC SNaP (SubNetwork access Protocol) format of the IEEE 802.2 LLC protocol", o: ["It allows the sharing of a broadcast transmission medium", "It allows the coexistence of a large number of protocols higher than level 2", "It is required on the Internet for transfer of data units in subnets", "Guarantees the recognition of transmission errors"], c: 1, col: "general", hint: "Protocol identification", exp: "SNAP indicates the higher level protocol." },
+            { q: "In the CSMA and CSMA-CD protocol the concept of persistence refers to:", o: ["The way in which the transmission attempt occurs, if listening to the channel indicates that it is busy", "The calculation of the time for which a station is authorized to occupy the channel", "How the retransmission attempt occurs, if a collision has occurred", "The time during which two transmissions overlap on the channel, which is a necessary condition for the collision to be detected"], c: 0, col: "mac", hint: "Channel access strategy", exp: "see slides CSMA and CSMA-CD." },
+            { q: "In the IP header, or in the PCI of the IP protocol, they are contained", o: ["The 16-bit Checksum field for checking the correctness of the header and of the data contained in the package", "The Sequence Number field for numbering the segments", "The Identification 3e Fragment Offset fields that allow the management of the fragmentation of packages"], c: 2, col: "ip", hint: "IP fragmentation support", exp: "Answer A is wrong, since the checksum header does not check for correctness of the data but only the correctness of the header. The B is wrong because the IP does not guarantee the order of arrival of the packets. The C is correct as it corresponds with the definition of the Fragment Offset." },
+            { q: "Why does VDSL technology have high performance only if the distance between the cab of road and user's home is less than a hundred meters?", o: ["Because the end-to-end delay between the user's home and the operator's control panel is reduced", "Because the costs of laying cables are reduced", "Because the shorter length of the copper cable allows the use of higher bit rate modulation", "Because the connections have to cross fewer intermediate nodes"], c: 2, col: "general", hint: "Cable length and modulation", exp: "See slides VDSL." },
+            { q: "Point-to-Point Protocol (PPP) does not use address fields because", o: ["Take advantage of the underlying MAC addresses", "Take advantage of top-level addresses", "It must operate on point-to-point connections", "It has no space in the plot header"], c: 2, col: "protocols", hint: "Point-to-point nature", exp: "See slides on the PPP." },
+            { q: "The DHCP protocol provides that", o: ["A client uses an IP address as soon as it receives it from the server in a DHCP offer message.", "A client may disconnect from the network without communicating it to the server.", "If a server exists, it is unique on the client's local network.", "The server never also provides the IP address of a DNS server in its response."], c: 1, col: "general", hint: "DHCP client behavior", exp: "Answer A is wrong as after the DHCP offer I only have suggestions. Only after the DHCP ACK the client can make use of the IP address offered by the DHCP server. The C is wrong since There can be multiple DHCP servers on a client's local network. The D is wrong, in fact the DHCP server provides the DHCP client with IP addresses of one or more DNS servers. By exclusion, the right answer is B." },
+            { q: "The fundamental functions of the link layer in the OSI model are", o: ["Flow control and recovery of transmission errors", "Data drive routing", "Transfer of binary digits on the channel"], c: 0, col: "osi", hint: "Layer 2 primary tasks", exp: "See Connection Level transparencies." },
+            { q: "During the slow-start phase of the TCP congestion control, the window transmitter current", o: ["It is halved for each missing ACK", "It grows by one segment for each acknowledgment (ACK) received", "Double for each acknowledgment (ACK) received", "It remains constant over time"], c: 1, col: "tcp", hint: "Slow start window growth", exp: "If there has been a timeout, by definition and to remain conservative, TCP Reno / Tahoe lead the cwnd to 1 (they enter the slow-start phase). Here the cwnd grows by 1 MSS for each ACK received." },
+            { q: "What is the order of magnitude of the maximum transmission rate on coaxial cable?", o: ["1 Tbit / s", "1 Mbit / s", "1 bit / s", "1 kbit / s", "1 Gbit / s"], c: 1, col: "general", hint: "Coaxial cable capacity", exp: "Coaxial cable: transmission speed around hundreds of Mbit / s." },
+            { q: "Window protocols can be used", o: ["Only for communications that use a connection", "Both for communications that use a connection and for those that don't", "Only for communications that do not use a connection"], c: 0, col: "protocols", hint: "Connection requirement", exp: "to be defined" },
+            { q: "The Address Resolution Protocol (ARP)", o: ["Obtain an Ethernet address to assign to the machine card it has made the ARP request", "It allows a host to know the IP address of its DNS server", "Realizes in OSI terms a mapping (translation) function between (3) -addresses and (2) -address"], c: 2, col: "general", hint: "IP to MAC resolution", exp: "lets you know another host's mac address by knowing its ip address." },
+            { q: "In the OSI model, the segmentation performed by a level entity (N + 1)", o: ["Create many (N + 1) -PDUs from a single (N + 1) -SDU", "Create a (N + 1) -PDU from many (N) -SDUs", "It combines many (N + 1) -PDUs in a single (N) -SDU", "Create many (N + 1) -PCI for the same (N + 1) -PDU"], c: 0, col: "osi", hint: "PDU creation process", exp: "Segmentation can occur by building multiple (N) -PDUs from one (N) -SDU generating multiple (N-1) -SDU from a (N) -PDU. Substituting N with N + 1, we obtain the answer A." },
+            { q: "Let Wt > 1 and Wr > 1 the dimensions, respectively, of the transmission window and of the receive windows in a windowed protocol. Also let N be the total quantity of sequence numbers available to distinguish data drives. Which of the following constraints is a necessary and sufficient condition for to avoid malfunctions on a channel that does not reverse the order of the data units?", o: ["N = Wt + 1", "N = (Wt + Wr) / 2", "N = Wr + 1", "N >= Wt + Wr"], c: 3, col: "protocols", hint: "Sequence space requirement", exp: "Assuming N = 2 ^ k (since N = total quantity of n ° seq) the formula to be respected is Wt + Wr <= 2 ^ k, that is Wt + Wr <= N, that is N> = Wt + Wr" },
+            { q: "The three fundamental elements that define a protocol are:", o: ["Algorithms, formats, timings", "Algorithms, formats, entities", "Algorithms, services, timings"], c: 0, col: "general", hint: "Protocol definition", exp: "By definition, a protocol is defined as semantics, syntax, timing." },
+            { q: "An Ethernet card of a Bridge (ie it reads and decides if and how to route)", o: ["All packets, regardless of the destination address", "Only packets with a unicast destination MAC address equal to that of the bridge", "Packets with broadcast destination MAC address only", "Packets with multicast destination MAC address only"], c: 0, col: "bridges", hint: "Bridge forwarding behavior", exp: "By definition a Bridge's ethernet reads and routes all packets." },
+            { q: "Which of the following statements is false?", o: ["An IP router can use the Address Resolution Protocol (ARP) to know the MAC address of the router or host to which it is to deliver an IP packet", "A host can use ICMP messages to verify another host's connectivity to the network Internet.", "An IP router, which does not perform a NAT (Network Address Translator) function, does not modify the IP addresses of the packets to be re-transmitted", "An IP host always only makes direct deliveries"], c: 3, col: "general", hint: "Host delivery modes", exp: "AB and C are correct as the ARP definitions are ICMP and NAT. By exclusion the answer is the D." },
+            { q: "To avoid blocking or loss of data units in a windowed protocol due to channels non-sequential, it is useful", o: ["Number the PDUs on a number of bits greater than 1 and do not limit the life time of the PDUs in the net", "Number the PDUs on a number of bits greater than 1 and limit the life time of the PDUs in the network", "Number the PDUs on a single bit and limit the life time of the PDUs in the network"], c: 1, col: "protocols", hint: "Sequence numbers and TTL", exp: "By definition, in window protocols, PDUs must be numbered on a number of bits greater than 1. It is necessary that the packets have a minimum life time (Time to Live) otherwise yes it would lead to congestion of the intermediate nodes." },
+            { q: "The constraints on the maximum extension of an IEEE 802.3 local network (CSMA / CD) arise", o: ["Both from the propagation delay of the signals from one end of the network to the other, and from the attenuation of the signals on the transmission media.", "Both from the attenuation of the signals on the transmission media and from the maximum delays tolerated by the users MAC service", "By the number of bits that would be needed to increase the data units in the case of large delays propagation"], c: 0, col: "ethernet", hint: "Network size limitations", exp: "to be defined" },
+            { q: "In the case in which a window protocol is used on a channel that does not allow inversions in the sequence order of the data units transmitted (ie on a sequential channel), assuming use a non-cyclic progressive numbering, the transmission and reception windows cannot never find yourself in the following situation:", o: ["No sequence number included in the receive window is also included in the window transmission", "The smallest sequence number in the transmission window is smaller than the smallest sequence number in the receiving window", "The smallest sequence number in the receive window is smaller than the smallest number of sequence in the transmission window.", "The largest sequence number in the receive window is larger than the largest number of sequence in the transmission window"], c: 2, col: "protocols", hint: "Window advancement order", exp: "A is possible in case all packets have been received but still no ACK is arrived at the transmitter. B and D are both the case where the receiver window is advanced but the transmitter has not yet received ACK. C cannot occur because the send window can advance only after receiving ACKs which must be sent by the receiver after the receiving a packet, but receiving it would necessarily involve a slide forward of the receiver, therefore the receiver never falls behind the transmitter." },
+            { q: "Medium Access Control (MAC) sublevel protocols serve purpose", o: ["To allow the sharing of a broadcast channel by means of a distributed algorithm", "To allow the sharing of a broadcast channel through a centralized algorithm", "To allow the sharing of a point-to-point channel"], c: 0, col: "mac", hint: "Distributed access control", exp: "In the MAC sub-level the random access protocols are: Aloha, CSMA, CSMA / CD and CSMA / CA. In random access protocols all peer stations implement a distributed algorithm to access the medium, there is no centralized element." },
+            { q: "The IEEE 802.3 standard (CSMA / CD) provides data units (also including layer 2)", o: ["Variable in size between 10 and 4500 octets", "Variable in size between 64 and 1518 octets", "Fixed size of 53"], c: 1, col: "ethernet", hint: "Ethernet frame size range", exp: "See slides." },
+            { q: "Which of the following statements is true?", o: ["In the commercial standard Ethernet (CSMA / CD access protocols), one is defined minimum packet size to ensure correct collision identification", "In the commercial standard Ethernet (CSMA / CD access protocol), one is defined minimum packet size to distinguish packets from IEEE 802.3 standard packets", "In the commercial standard Ethernet (CSMA / CD access protocol), one is defined minimum packet size to ensure better performance, in terms of traffic disposed of, al access protocol compared to what you would have with maximum size packets"], c: 0, col: "ethernet", hint: "Minimum frame size purpose", exp: "On ethernet the collision is a function of the length of the packet." },
+            { q: "In the header (header) TCP, or in the PCI of the TCP protocol, they are mandatory content", o: ["The TTL (Time To Live) field that allows the elimination from the network of packets that have too many routers went through", "The sequence number and theack number, for the numbering of the segment and the acknowledgments (ACK)", "The fragmentation field for managing segment fragmentation"], c: 1, col: "tcp", hint: "TCP essential fields", exp: "See TCP slides." },
+            { q: "A protocol", o: ["It is a set of semantic and syntactic rules to allow communication between two entities equal level", "It is a set of semantic and syntactic rules to allow communication between two entities same system", "It is a set of semantic and syntactic rules to allow communication between two systems which are linked together", "It is a set of semantic and syntactic rules to allow communication between two entities different systems"], c: 0, col: "general", hint: "Same-layer communication", exp: "By definition, an entity communicates with other entities of the same level." },
+            { q: "In a Store-and-Forward packet network, increasing the number of nodes between source and destination", o: ["It leads to an increase in the delivery time, directly proportional to the size of the package", "It leads to an increase in delivery time, directly proportional to the average speed of the channels", "It leads to an increase in the delivery time, inversely proportional to the size of the package"], c: 0, col: "packet-switching", hint: "Hop count effect", exp: "In store and forward mode each node must first store each packet and only subsequently can it forward it to the next node directly proportional to the size of the package." },
+            { q: "The UDP protocol provides a service", o: ["Unreliable (i.e. no delivery guarantee) and connectionless", "Reliable (i.e. with delivery guarantee) and connectionless", "Unreliable (i.e. without delivery guarantee) and connection oriented"], c: 0, col: "udp", hint: "UDP service characteristics", exp: "By definition UDP only implements multiplexing and demultiplexing functions connectionless unreliable." },
+            { q: "The TCP protocol provides a service", o: ["Unreliable (i.e. no delivery guarantee) and connectionless", "Reliable (i.e. with delivery guarantee) and connectionless", "Unreliable (i.e. without delivery guarantee) and connection oriented", "Reliable (i.e. with delivery guarantee) and connection oriented"], c: 3, col: "tcp", hint: "TCP reliability features", exp: "TCP provides multiplexing, demultiplexing, reliable data transfer, flow control, congestion control, which is a reliable connection-oriented service." },
+            { q: "The PPP (Point-to-point-Protocol)", o: ["Use the byte-stuffing technique to ensure data transparency", "Use the bit-stuffing technique to ensure data transparency", "Does not guarantee the transparency of data"], c: 0, col: "protocols", hint: "PPP transparency mechanism", exp: "See transparencies on the PPP." },
+            { q: "Comparing Fast Ethernet at 100 Mb / s (100Base T) with Ethernet at 10 Mb / s, which of the following statements is false?", o: ["The distance constraints between the nodes are more stringent", "A different access protocol is used", "A different physical layer is used"], c: 1, col: "ethernet", hint: "MAC protocol compatibility", exp: "the A is true because Ethernet to Fast Ethernet decreased the network size by one factor 10. The C is true because Base T is the twisted pair, while Ethernet at 10Mb / s was over coax. The only fake is the B." },
+            { q: "Which of the following protocols does not perform error detection functions on data drives?", o: ["LaPB (Link access Protocol Balanced)", "IEEE 802.2 LLC (Logical Link Protocol)", "PPP (Point-to-Point Protocol)", "LaPF (Link access Procedure to Frame-mode bearer services)"], c: 1, col: "protocols", hint: "LLC vs other protocols", exp: "Slide Link Layer (Layer 2) page 48, clearly states that LLC does not control error (there is no CRC field)." },
+            { q: "Which of the following statements is true?", o: ["A T1 topology, with N nodes, C channels and M1 average distance, always allows one to be disposed of lower amount of traffic of a T2 topology, with N nodes, C channels and average distance M2> M1, only with traffic evenly distributed between nodes.", "A T1 topology, with N nodes, C channels and M1 average distance, always allows one to be disposed of traffic quantity lower than a T2 topology, with N nodes, C channels and average distance M2> M1, regardless of the traffic distribution.", "The amount of traffic disposed of in a T1 topology, with N nodes, C channels and average distance M1, with respect to to that disposed of in a T2 topology, with N nodes, C channels and average distance M2> M1, depends on the traffic distribution between nodes"], c: 2, col: "topology", hint: "Traffic distribution impact", exp: "With the same capacity available on the channels, the amount of traffic that can be disposed of by a network depends on the average of the distances between each pair of nodes on the network." },
+            { q: "The main differences between a Frame Relay network and an Internet IP network are possible include:", o: ["The use or non-use of aRQ (automatic Retransmission reQuest) techniques in each section of the network", "The transfer of information in connection-oriented rather than non-connection-oriented mode connection", "Transfer of data units of variable size instead of fixed size"], c: 1, col: "general", hint: "Frame Relay vs IP", exp: "Frame relay uses virtual circuit and not datagram (as IP does). They both use packages of variable size." },
+            { q: "Consider an Ethernet LAN with 10 nodes. Partition the network into two networks interconnected by transparent bridges. Which of the following statements is false ?", o: ["The bridge separates the collision domains of the two interconnected networks", "The performance of the network in terms of traffic disposed improves in any traffic condition, that is, completely independent of the distribution of traffic between nodes", "The bridge introduces an additional delay in transmissions between bridged nodes", "It is not necessary to change the configuration of the nodes connected to the LAN to allow a correct operation after partitioning the network"], c: 1, col: "bridges", hint: "Bridge performance impact", exp: "to be defined" },
+            { q: "Consider two LANs (Ethernet 10BaSE) A and B, connected by a bridge B1 and by a router R1 (B1 and R1 are in parallel between the two LANs). Suppose the bridge and router have both ports active and know all the addresses (MAC and IP respectively) of the hosts connected to two LANs. When a host connected to LAN A transmits an IP packet to a host connected to the LAN B", o: ["The packet is forwarded over LAN B either by the bridge or by the router, depending on the address value Destination MAC contained in the packet", "The packet is forwarded on LAN B by both router R1 and bridge B1", "The packet is forwarded on LAN B only by router R1", "The packet is forwarded on LAN B only by bridge B1"], c: 0, col: "general", hint: "Layer 2 vs Layer 3 forwarding", exp: "to be defined" },
+            { q: "The size of the current TCP transmitter window during a connection", o: ["It is regulated exclusively on the basis of the notification by the receiver of the size of the receiving window to perform flow control", "It varies with congestion in the network and due to the flow control exercised by the receiver", "It is fixed"], c: 1, col: "tcp", hint: "Combined window control", exp: "the level of congestion determines the cwnd and therefore the twnd" },
+            { q: "In the event of a segment loss identified by receiving three hits, the size of the current TCP transmitter window", o: ["It is brought to a value equal to half of the threshold", "It is brought to a value equal to the threshold value", "It is returned to the initial value, equal to one segment"], c: 0, col: "tcp", hint: "Fast retransmit response", exp: "The 3 hits correspond to the reception of 3 duplicate ACKs, the rest in the congestion phase avoidance with halving the cwnd, so A is the right answer (TCP reno)." },
+            { q: "What is the order of magnitude of the maximum transmission rate on a twisted pair?", o: ["1 Tbit / s", "1 kbit / s", "1 Mbit / s", "1 Gbit / s", "1 bit / s"], c: 3, col: "general", hint: "Twisted pair capacity", exp: "See slides Doppino." },
+            { q: "An IP router", o: ["It performs both fragmentation and reassembly of the datagram", "Performs fragmentation of datagrams, but not reassembly", "It does not perform datagram fragmentation", "Performs fragmentation of datagrams, and reassembly only if an appropriate bit is set in the IP header"], c: 1, col: "ip", hint: "Router fragmentation behavior", exp: "Reassembly is the responsibility of the final destination." },
+            { q: "Common channel signaling", o: ["It requires the use of signaling messages that contain the identifier of the connection to which they refer to", "It is only used in packet-switched networks, because in circuit, the associated channel signaling technique is used", "It cannot be used in cell or packet switched networks because it is too difficult identify connections in these networks without associating them with a signaling channel", "It makes use of common transmission channels that are associated with each connection being made opening the connection itself"], c: 0, col: "signaling", hint: "Connection identification", exp: "A is the definition of common channel signaling: a separate managed channel a packet switching, where each packet contains the signaling information that it concerns a specific controlled channel and the identification of the connection. B: channel signaling common is typically used in telephone networks (circuit switching). C: without meaning. D: associated channel definition." },
+            { q: "The use of cookies in the HTTP protocol allows you to", o: ["Associate multiple requests made by the same browser or user", "Cache the responses received", "Download all the objects contained in a page by opening a single TCP connection", "Send the response to the client using different fragments (Chunked Transfer)"], c: 0, col: "http", hint: "Session tracking", exp: "See slides cookies." },
+            { q: "Code division multiplexing", o: ["it is a special case of time division only", "it is a special case of frequency division only", "it allows to use multiplexing and switching on the same physical medium", "it does not necessarily need to be coupled to time or frequency multiplexing"], c: 3, col: "general", hint: "Independent multiplexing method", exp: "A and B are false, C is incorrect because the toggle is node sharing, not del physical medium, while multiplexing is the way in which the physical medium is divided." },
+            { q: "An (N) -protocol regulates interactions", o: ["between an (N) -entity and a (N-1) -SAP", "between (N) -entities of the same system or of different systems", "between an (N) -entity and all entities below it in the protocol stack", "between an (N) -entity and the (N-1) -entity"], c: 1, col: "osi", hint: "Peer protocol entities", exp: "Protocol definition." },
+            { q: "A Go-Back-N window protocol provides that:", o: ["when a packet is received with an error, the last N data units are retransmitted", "the transmitter receives feedback for the last N data units transmitted before it can start transmission of other data units", "the transmitter cannot send more than N data units before having received one or more acknowledgments", "every time a time-out expires, the data unit whose sequence order is equal to sequence number of the last transmitted data unit decreased by N"], c: 2, col: "protocols", hint: "Window size limitation", exp: "A: retransmission occurs with timeout and not with packets received with errors. B: enough receive an ACK to advance the window. D: The timeout may expire while the window and the rule is not to retransmit going backwards, but to retransmit the contents of the window." },
+            { q: "Which of these HTTP statements is false?", o: ["HTTP is an application-level protocol that allows you to transfer objects on a web page", "HTTP is a language that allows you to define the format of Web pages", "HTTP is based on a client-server architecture", "Without additional workarounds, HTTP is a stateless type protocol"], c: 1, col: "http", hint: "HTTP vs HTML", exp: "checked during exam correction." },
+            { q: "Using the piggybacking technique in window protocols the advantage of:", o: ["Confirm the receipt of more than one data unit through a single acknowledgment", "Transmit data units even outside the transmission window", "Increase the likelihood that an ACK will be received by the transmitter", "Reduce the percentage of control information that is carried over the network"], c: 3, col: "protocols", hint: "Overhead reduction", exp: "Checked during exam correction." },
+            { q: "The DHCP discover message is sent over UDP using as the IP destination address:", o: ["The limited broadcast IP address 255.255.255.255", "The loopback address 127.0.0.1", "The IP address of the local DNS servers", "The IP address of the DHCP servers on the local network"], c: 0, col: "general", hint: "Broadcast discovery", exp: "occurred during exam correction." },
+            { q: "What disadvantage does datagram packet switching have compared to circuit switching?", o: ["Calculation of the routing to the source", "Variability of data delays", "Calculation of the route when the communication is opened", "Long communication opening time"], c: 1, col: "packet-switching", hint: "Delay characteristics", exp: "checked during exam correction." },
+            { q: "In the absence of errors, the efficiency of a Stop and Wait protocol:", o: ["it is always higher than the efficiency of a Go-Back-N protocol", "it is less than the efficiency of a Go-Back-N protocol only if the transmission time of a packet plus the round trip time on the channel is less than the time it takes to send the entire window transmission of the Stop and Wait protocol", "it is less than the efficiency of a Go-Back-N protocol only if the transmission time of a packet is greater than the round trip propagation time on the channel", "it is always less than the efficiency of a Go-Back-N protocol"], c: 3, col: "protocols", hint: "Window protocol efficiency", exp: "Checked during exam correction." },
+            { q: "What is the playout buffer for?", o: ["To avoid situations of congestion on the network", "Access multimedia content faster thanks to local caching", "To compensate for network delays in streaming multimedia content", "To manage the retransmission window for multimedia contents"], c: 2, col: "general", hint: "Delay compensation", exp: "checked during exam correction." },
+            { q: "In a virtual circuit packet-switched network the number of labels used for routing it is proportional:", o: ["To the number of possible destinations", "At the average number of channels outgoing from each node", "The number of active connections", "At the average number of nodes to cross"], c: 2, col: "packet-switching", hint: "Per-connection labeling", exp: "checked during exam correction." },
+            { q: "How are ARP messages encapsulated?", o: ["In the body of an HTTP message", "Directly in an Ethernet frame", "In one or more TCP segments", "Directly in an IP datagram"], c: 1, col: "general", hint: "ARP layer position", exp: "checked during exam correction." },
+            { q: "What happens when the transmission timeout in TCP is set to a value significantly less than the round-trip time?", o: ["The time it takes to recover from segment loss situations is getting longer", "Unnecessary segment retransmissions may occur", "There is never any visible effect", "The receiver no longer guarantees that correct data is supplied to the process listening on the socket"], c: 1, col: "tcp", hint: "Premature timeout effect", exp: "checked during exam correction." },
+            { q: "The instability of the Aloha and Slotted Aloha protocols is caused by:", o: ["The increase in propagation delay when the traffic offered exceeds a certain threshold", "The decrease in traffic disposed of when the traffic offered exceeds a certain threshold", "The increase in traffic disposed of when the offered traffic exceeds a certain threshold"], c: 1, col: "mac", hint: "Throughput collapse", exp: "checked during exam correction." },
+            { q: "Consider a host that is transmitting data using the TCP protocol. Given a transmitter current window of size equal to 10 segments, with a maximum receiver window equal to 40 segments, when the transmitter receives a segment containing an ACK from the side of the receiver, which of the following situations is impossible?", o: ["The transmitter's current window becomes 1 segment", "The transmitter's current window becomes 51 segments", "The current window to the transmitter becomes 9 segments", "The transmitter's current window becomes 5 segments"], c: 1, col: "tcp", hint: "Maximum window constraint", exp: "checked during exam correction." },
+            { q: "Which of these fields is not contained in the header of an IPv4 datagram?", o: ["Destination IP address", "Time to live (TTL)", "Protocol", "Destination port"], c: 3, col: "ip", hint: "Layer separation", exp: "Checked during exam correction." },
+            { q: "In the hierarchy provided by the DNS for the resolution of names not present in the cache, which one level is located immediately below the Root DNS Server?", o: ["Top-level domain (TLD) DNS server", "Local DHCP servers", "Local DNS server", "Authoritative DNS servers"], c: 0, col: "dns", hint: "DNS hierarchy levels", exp: "occurred during exam correction" },
+            { q: "The current congestion window at the TCP transmitter at the start of the connection:", o: ["It has a size negotiated with the receiver and equal to half the window of the receiver", "It has a size equal to a segment of maximum size (MSS)", "It has a size negotiated with the receiver and equal to the maximum value of the receiver window", "It has a random size chosen during the opening phase of the connection"], c: 1, col: "tcp", hint: "Initial cwnd value", exp: "checked during exam correction." },
+            { q: "In a packet-switched network operating in store-and-forward mode a smaller size of data units:", o: ["Decreases the number of operations that must be performed by a switch to transfer the same total amount of user information", "The probability of losing the packet increases with the same probability of error on the bit", "The routing complexity of each data unit decreases", "Decreases the time from when a data unit reaches the input of a switch until it leaves the switch"], c: 3, col: "packet-switching", hint: "Store time reduction", exp: "Checked during exam correction." },
+            { q: "In a one-way ring topology, with 10 nodes and uniform unicast traffic (all nodes transmit the same amount of traffic to all others), the average number of channels traversed by a package is equal to:", o: ["20", "10", "5", "1"], c: 2, col: "topology", hint: "Average hop count", exp: "checked during exam correction." },
+            { q: "Transmission Control Protocol (TCP) congestion control is based on:", o: ["On the variation of the number of parity bits inserted in the transmitted segments", "On the trend of the size of the segments transmitted to the state of the network", "About adapting the transmitter window to the receiver's memory availability", "On the dynamics of the transmitter window size"], c: 3, col: "tcp", hint: "Window-based control", exp: "Checked during exam correction." },
+            { q: "The minimum time required to send a 100Kbyte packet between two stations separated by 300 meters, using a wired network with UTP (Unshielded Twisted Pair) and crossing 3 interconnection equipment operating in store and forward mode, is of the order of:", o: ["A few seconds", "It can only be calculated by knowing the transmission bit rate on the channels", "A few milliseconds", "Hundreds of milliseconds"], c: 1, col: "general", hint: "Transmission time dependency", exp: "checked during exam correction." },
+            { q: "What are the source and destination port fields in TCP and UDP for?", o: ["To implement a multiplexing / demultiplexing mechanism for processes on hosts", "To manage the allocation of resources on the router on the path from source to destination", "To indicate the network interfaces on which packets will be forwarded by IP", "To indicate the physical interfaces on which the frames will be transmitted by Ethernet"], c: 0, col: "general", hint: "Port-based multiplexing", exp: "occurred during exam correction." },
+            { q: "Among the fundamental functions of the transport layer in the OSI model we find:", o: ["Exchange of labels in circuit switching", "Reading data from a terminal device", "Recovery of transmission errors", "Data drive routing"], c: 2, col: "osi", hint: "Transport layer tasks", exp: "checked during exam correction." },
+            { q: "At the same rate of information transmitted, which of the following line codings it requires a physically lower bitrate?", o: ["12B15B encoding", "4B5B encoding", "They all require the same bit rate", "8B10B encoding"], c: 2, col: "general", hint: "Encoding comparison", exp: "checked during exam correction." },
+            { q: "If a router receives an IP packet, with correct checksum, with source IP address and destination equal and TTL field = 9", o: ["It routes it to the destination", "It still forwards it to the destination, however sending an ICMP packet to the source for report the error", "It discards it and sends an ICMP error packet to the source", "Discard the package"], c: 0, col: "ip", hint: "Loopback address handling", exp: "occurred during exam correction." },
+            { q: "The preamble in the Ethernet packet:", o: ["It allows to recognize transmission errors", "Used to identify the type of protocol transported in the data field of the Ethernet packet", "It allows you to identify the application process to which to deliver the package", "it is necessary to allow the receiver node to tune its clock with the clock of the transmitter node"], c: 3, col: "ethernet", hint: "Clock synchronization purpose", exp: "Checked during exam correction." },
+            { q: "Two IP stations 130.192.40.1/24 and 130.192.40.200/24", o: ["They have no valid IP addresses", "They can exchange IP packets directly", "They can only exchange IP packets via a router", "They cannot exchange IP packets"], c: 1, col: "ip", hint: "Same subnet connectivity", exp: "checked during exam correction." },
+            { q: "SMTP", o: ["it is used by a mail client to get a mail message from a server", "allows a mail server to tell another mail server who the sender of a mail server is message", "allows a mail server to verify the identity of a user who wants to send a message", "it is based on the telnet protocol"], c: 1, col: "general", hint: "Server-to-server communication", exp: "checked during exam correction." },
+            { q: "TCP messages contain a sequence number indicating", o: ["the next byte the receiver expects to receive", "the message number in the sequence of messages transmitted over the TCP connection", "the sequence number of the message in a set of fragments produced by fragmenting a bigger message", "the position of the first byte of the message in the sequence of bytes transmitted on the connection TCP"], c: 3, col: "tcp", hint: "Byte-level sequencing", exp: "Checked during exam correction." },
+            { q: "Congestion control in TCP", o: ["enforces a maximum number of TCP connections that a station can open", "it is based on information received from routers on the route", "it is present only for some types of connections", "limits the size of the transmission window"], c: 3, col: "tcp", hint: "Window limitation mechanism", exp: "Checked during exam correction." },
+            { q: "In the WI-FI protocol with DCF and handshaking", o: ["sending the RTS and CTS packets reduces the probability of collisions on the data packets", "collisions are completely avoided thanks to the carrier sense mechanism", "sending the RTS packets and the CTS allows two terminals, one of which is hidden, to send their plots at the same time", "collisions on any type of data transmitted are completely avoided"], c: 0, col: "general", hint: "RTS/CTS collision reduction", exp: "occurred during exam correction." },
+            { q: "The HEAD method of the HTTP protocol is used to:", o: ["get the header of a web page", "send only the header of an HTTP request", "change the header, or home page, of a web server", "receive only the HTTP response header"], c: 3, col: "http", hint: "Metadata retrieval", exp: "Checked during exam correction." },
+            { q: "The receipt on node A of an ICMP Echo Reply packet sent by node B indicates that", o: ["A and B are able to exchange IP packets", "A is able to send IP packets to B but not vice versa", "B is able to send IP packets to A but not vice versa", "B is able to send IP packets to A but vice versa is not guaranteed"], c: 0, col: "general", hint: "Bidirectional connectivity", exp: "occurred during exam correction." },
+            { q: "The ARP Request frame is used for learning", o: ["the MAC address of a station connected to an IP network other than that of the source", "the IP address of an Ethernet node directly connected to the source node", "the IP address of a station given its internet name", "the MAC address of an IP node directly connected to the source node"], c: 3, col: "general", hint: "Local network resolution", exp: "Checked during exam correction." },
+            { q: "The DHCP protocol", o: ["it is used for automatic configuration of an IP station", "it only provides IP stations with private type addresses", "provides the stations with the IP address corresponding to a given domain name", "it does not allow a station to reuse the same IP address already used during a previous connection to the local network"], c: 0, col: "general", hint: "Automatic IP configuration", exp: "occurred during exam correction." },
+            { q: "Given a topology (nodes, channels and associated costs), the optimal path between a source and a destination", o: ["it never changes even if a channel becomes unavailable", "it changes depending on the node running the link state algorithm", "it is the same whether a link state algorithm is used or a distance vector algorithm is used", "it never changes even if the cost of the channels changes"], c: 2, col: "routing", hint: "Algorithm-independent optimal path", exp: "checked during exam correction." },
+            { q: "When an Ethernet switch receives an ARP Request packet", o: ["it only forwards it to the port to which the network's DHCP server is connected", "forwards it on all ports except the one from which the packet was received", "it forwards it only on ports on which multicast traffic has been enabled", "it only forwards it on the port to which the destination node / host is connected"], c: 1, col: "ethernet", hint: "Broadcast forwarding", exp: "checked during exam correction." },
+            { q: "IP version 4 addresses are:", o: ["randomly assigned to the various stations connected to the internet, regardless of theirs position", "assigned by the manufacturers of the network cards", "generally assigned on a geographical and topological basis, in order to favor their aggregation"], c: 2, col: "ip", hint: "Hierarchical assignment", exp: "checked during exam correction." },
+            { q: "The slow start phase in TCP", o: ["expects the congestion window to remain at a very low value for the duration of the connection", "it is one of the phases that carry out the flow control", "it allows the congestion window to grow quickly starting from a very initial value low", "allows the congestion window to grow slowly in order to avoid situations congestion"], c: 2, col: "tcp", hint: "Exponential growth phase", exp: "checked during exam correction." },
+            { q: "The minimum packet size in the CSMA / CD protocol of the Ethernet network", o: ["it is necessary to ensure recognition of the collision", "it is preferable to maximize performance in terms of traffic disposed of", "it is necessary to ensure that you avoid causing multiple consecutive collisions on the same packet", "it does not depend in any way on the maximum allowed size (in meters) of the network"], c: 0, col: "ethernet", hint: "Collision detection requirement", exp: "occurred during exam correction." },
+            { q: "A ring topology may be preferable to a mesh topology because:", o: ["it can carry data and voice communications at the same time", "routing is simpler", "it is more robust to failure", "allows bi-directional paths"], c: 1, col: "topology", hint: "Routing complexity comparison", exp: "checked during exam correction." },
+            { q: "Two stations in the same collision domain on an Ethernet network", o: ["they can create a collision only in the case of exactly simultaneous transmission", "they can never create a collision thanks to the carrier sense operation typical of the protocol CSMA-CD", "they identify the collision thanks to a NACK frame sent by the switch on which they are connected", "they can create a collision when they transmit a packet"], c: 3, col: "ethernet", hint: "Collision domain definition", exp: "Checked during exam correction." },
+            { q: "The TCP segments sent from host A to host B contain an acknowledgment number (Acknowledgment number) indicating:", o: ["the next byte host B expects to receive", "the next byte host A expects to receive in the segments sent from host B", "the position of the segment in the sequence of segments transmitted on the TCP connection", "the position of the first byte of the segment in the sequence of bytes transmitted on the TCP connection"], c: 1, col: "tcp", hint: "ACK number semantics", exp: "checked during exam correction." },
+            { q: "A node using a Selective Repeat windowed protocol with cumulative semantics of ACK to receive data from another node is expected to deliver a duplicate PDU. Assuming none given it was lost, which of the following reasons is most likely the cause of this behavior?", o: ["The receiver window is too small", "transmitter timeout is too short", "transmitter timeout is too long", "the transmitter window is too small"], c: 1, col: "protocols", hint: "Premature timeout", exp: "checked during exam correction." },
+            { q: "A node using a Go-Back-N windowed protocol with cumulative ACK semantics to receive data from another node, a duplicate PDU is delivered. Which of the following actions undertakes?", o: ["Always send an ACK for the expected sequence number", "if the PDU is within the receiving window, it always sends an ACK relative to the sequence number of the duplicated PDU", "sends an ACK relative to the expected sequence number only if the timeout has not yet expired transmitter", "always sends an ACK regarding the sequence number of the duplicated PDU"], c: 0, col: "protocols", hint: "GBN receiver behavior", exp: "occurred during exam correction." },
+            { q: "The IP protocol", o: ["implements the transport layer of the Internet network", "makes a large network more scalable thanks to address aggregation", "it is not used in local networks as the Ethernet technology is adequate", "provides the mechanisms for accessing a shared medium"], c: 1, col: "ip", hint: "Address aggregation benefit", exp: "checked during exam correction." },
+            { q: "A routing protocol", o: ["involves exchanging information on the state of the network to build routing tables", "defines the operations to be performed to forward individual packets on the outbound port", "defines the operations to be performed to choose the path to the destination", "it uses routing tables but only in the case of circuit switching"], c: 0, col: "routing", hint: "Routing table construction", exp: "occurred during exam correction." },
+            { q: "In the ATM protocol of the B-ISDN network, the data units, called cells, are small in size (48byte + 5byte header)", o: ["to segment the data units of the IP protocol into cells in order to decrease the probability of data loss data", "to improve the relationship between headers and user data in the cell", "to reduce the packaging time (package creation) to transfer the voice for real-time applications", "to increase the transfer speed of a large file thanks to the efficient segmentation and reassembly process"], c: 2, col: "general", hint: "Voice packetization delay", exp: "checked during exam correction." },
+            { q: "The DNS", o: ["it is a system used for the automatic configuration of the domain name on the hosts on the network Internet", "is a distributed database that, given a search key, allows you to identify, within one server hierarchy, a record of a specified type", "is a system used by the IANA to delegate the assignment of domain names (Top Level Domain)", "is a server that is installed within a corporate network and contains the correspondence between name and address of any host on the internet"], c: 1, col: "dns", hint: "Distributed database system", exp: "checked during exam correction." },
+            { q: "Simultaneous sharing of the same physical channel between different sources can take place", o: ["through frequency multiplexing", "through circuit multiplexing", "through circuit switching", "through virtual circuit packet switching"], c: 0, col: "general", hint: "Frequency division multiplexing", exp: "occurred during exam correction." },
+            { q: "The IP network can be assigned to an Ethernet network containing 200 stations", o: ["130.192.2.0/24", "130.192.0.0/25", "130.192.2.0/25", "130.192.2.0/26"], c: 0, col: "ip", hint: "Subnet size calculation", exp: "occurred during exam correction." },
+            { q: "The TCP segments", o: ["they have a fixed size negotiated when the connection is established", "have a fixed size specified by the TCP standard", "they vary in size which is decided on the basis of the level of congestion on the network", "they vary in size which does not depend on the level of congestion on the network"], c: 3, col: "tcp", hint: "Variable segment size", exp: "Checked during exam correction." },
+            { q: "To reduce the packaging delay it is advisable", o: ["increase the size of the header", "choose a nearby destination", "reduce the size of the PDU data field", "use a contention access protocol"], c: 2, col: "general", hint: "Packetization delay reduction", exp: "checked during exam correction." },
+            { q: "In a UTP cable (Unshielded Twisted Pair) the signal transmission takes place by exploiting", o: ["the difference between the voltages of different pairs of conductors", "the difference between the voltages on the components of a pair of conductors", "the difference between the voltage of a single conductor and the earth", "the difference between the voltage of a single conductor and the metallic braid"], c: 1, col: "general", hint: "Differential signaling", exp: "checked during exam correction." },
+            { q: "Considering the transmission of a single packet in a multiple access network", o: ["the ALOHA protocol always guarantees the same access delay as that of the protocol SLOTTED ALOHA", "the SLOTTED ALOHA protocol guarantees a shorter access delay than the protocol ALOHA", "it is preferable to use an ordered access protocol to reduce the access delay", "the ALOHA protocol guarantees a shorter access delay than that of the SLOTTED protocol ALOHA"], c: 3, col: "mac", hint: "Transmission timing flexibility", exp: "Checked during exam correction." },
+            { q: "Flow control", o: ["it is offered by UDP using a special field in the header", "it is offered by both TCP and UDP as it is fundamental in the realization of a end-to-end communication", "it is not offered by either TCP or UDP as it is already present in the lower level protocols", "it is offered by TCP using a special field in the header"], c: 3, col: "tcp", hint: "TCP window field", exp: "Checked during exam correction." },
+            { q: "An example of multiple access is represented by", o: ["base station that transmits to mobile terminals of a cellular network", "local fixed telephone exchange", "television broadcasts radiated by satellite", "mobile terminals that transmit to the base station in a cellular network"], c: 3, col: "general", hint: "Multiple transmitters scenario", exp: "Mobile terminals potentially access from different points" },
+            { q: "Which of the following functions are not performed by the Transmission Control Protocol (TCP)?", o: ["Congestion control", "Maintenance of the byte sequence", "Multiplexing / demultiplexing through the door mechanism", "Choice of packet routing"], c: 3, col: "tcp", hint: "Network layer function", exp: "Routing is layer 3 responsibility" },
+            { q: "For a transmitter that implements an ARQ (Automatic Retransmission reQuest), the receipt of a succession of hits containing the same sequence number is a symptom from", o: ["an increase in the duration of the timeout", "a loss of acknowledgment data drive (ACK)", "an increase in the bandwidth availability between transmitter and receiver", "a loss of a data unit of information"], c: 3, col: "protocols", hint: "Missing data indication", exp: "Duplicate ACKs indicate data loss" },
+            { q: "Which of the following functions is not characteristic of the second architectural level of the OSI model?", o: ["delimitation of data units", "addressing on the local network", "error checking on data drives", "end-to-end routing of data drives"], c: 3, col: "osi", hint: "Layer 2 vs Layer 3", exp: "see slide 02-Architectures pp45-46: routing is the task of level 3" },
+            { q: "Which of the following statements applies to Fast Ethernet in full-duplex mode (bidirectional)?", o: ["The full-duplex mode can be used between a user station and a switch port, or between the ports of two switches", "The full-duplex mode does not allow a greater distance between a user station and one switch", "The full-duplex mode allows you to interconnect switches in a ring topology", "The full-duplex mode does not increase the amount of information that can be disposed of between a user station and a switch, compared to half-duplex mode"], c: 0, col: "ethernet", hint: "Full-duplex applicability", exp: "Station-switch or switch-switch connections" },
+            { q: "The TCP transmitter window control algorithm switches from the slow-start phase to congestion avoidance (AIMD)", o: ["upon notification by the receiver", "when the current window reaches a threshold value", "after a timeout expires", "as soon as an out of sequence feedback is received"], c: 1, col: "tcp", hint: "Threshold comparison", exp: "see slide 04-Transport Level" },
+            { q: "In a packet-switched network of the virtual circuit type, the algorithm of routing applies to switching nodes", o: ["to all packets received", "only to the request packets for opening and closing the virtual circuit", "to data packets only", "to the virtual circuit opening request packets only"], c: 3, col: "packet-switching", hint: "VC setup phase", exp: "see slide 01-General Concepts pp.146-147 all packets otherwise route the packet it would not move from the intermediate nodes" },
+            { q: "Which of these statements regarding peer-to-peer architectures is false?", o: ["They are self-scaling, i.e. the performances do not change drastically as the number of peer", "The peers are located in large data centers and are managed by the same administrator", "Resources usually remain accessible even if some peers are turned off", "Peers can change their IP address over time"], c: 1, col: "general", hint: "P2P distribution", exp: "Peers are distributed, not centralized" },
+            { q: "Which of these statements regarding datagram routing in IP networks is true?", o: ["It is done by routers on the basis of the destination IP address", "It is done by routers on the basis of the source IP address", "It is performed by routers on the basis of the virtual-circuit (VC) identifier", "IP is based on circuit switching, so no routing is done"], c: 0, col: "routing", hint: "Destination-based forwarding", exp: "IP uses destination address for routing" },
+            { q: "The fact that the Point-to-Point Protocol (PPP) operates on point-to-point links involves, among other things:", o: ["That PPP should use MAC layer addresses to distinguish sender and recipient", "That it is not necessary to use addresses in the PPP header", "That PPP should send the identity of the recipient to the higher levels", "That the PPP frames have a fixed length"], c: 1, col: "protocols", hint: "Point-to-point addressing", exp: "No address needed on P2P link" },
+            { q: "Which of the following is necessary to make the operation of a window protocol in case of non-sequential channel between transmitter and receiver?", o: ["Use of cumulative confirmations", "Increase of the bits in the address fields of the data units", "Choice of transmission and reception windows of equal size", "Increase of the bits used for the numbering of the data units"], c: 3, col: "protocols", hint: "Sequence number space", exp: "Checked during exam correction." },
+            { q: "Which of these statements about TCP's retransmission mechanism is false?", o: ["Receiving a duplicate triple ACK causes the oldest pending segment to be retransmitted confirmation", "A timeout causes retransmission of the oldest segment awaiting confirmation", "A timeout causes retransmission of all segments awaiting confirmation", "Receipt of an ACK also cumulatively confirms all previous segments"], c: 2, col: "tcp", hint: "Selective vs full retransmission", exp: "In case of timeout the transmission window is reduced, so the C is definitely not false being able to retransmit them all." },
+            { q: "Which of these DASH statements is false?", o: ["It is based on the availability of different bit encoded versions of the same multimedia content installments", "It produces messages that are packaged in RTP to make internet telephony", "Make a compromise between available network bandwidth and multimedia content quality", "It is used for streaming multimedia content over HTTP"], c: 1, col: "general", hint: "DASH vs RTP usage", exp: "checked during exam correction." },
+            { q: "In datagram type packet switching it is foreseen:", o: ["An assignment of transmission resources for the duration of the packet transmission only", "A statistical choice between frequency multiplexing and time multiplexing", "A preventive allocation of transmission resources based on the activity statistics of the sources", "A permanent assignment of transmission resources to different information flows"], c: 0, col: "packet-switching", hint: "Temporary resource allocation", exp: "To be checked" },
+            { q: "The TCP protocol dynamically varies the size of the current window at the transmitter to obtain:", o: ["The window does not change", "Both flow control and congestion control", "Congestion Control Only", "Flow control only"], c: 1, col: "tcp", hint: "Dual control mechanism", exp: "checked during exam correction." },
+            { q: "Which of the following is NOT an example of multiple access?", o: ["A switch that transmits packets on an output interface in a switched network package", "Aloha stations towards the Master station", "Smartphones transmitting to a base station in the access network of a cellular network", "Transmission of computers equipped with a WIFI card to an Access Point"], c: 0, col: "general", hint: "Point-to-point vs multiple access", exp: "occurred during exam correction." },
+            { q: "There is at least one tree topology with 5 nodes and 4 channels in which, if a channel between two nodes not directly connected to each other, the topology:", o: ["It becomes a ring topology", "A tree topology remains", "It becomes a star topology", "Become a fully connected topology"], c: 0, col: "topology", hint: "Adding edge to tree", exp: "To be checked" },
+            { q: "Which of these DHCP claims is false?", o: ["DHCP dynamically supplies an IP address to a requesting host", "Among the information provided by the DHCP server there is also the default gateway address", "DHCP messages are enveloped in UDP datagrams sent in broadcast", "There can be at most one DHCP server on a network"], c: 3, col: "general", hint: "Multiple DHCP servers allowed", exp: "Checked during exam correction." },
+            { q: "In the IP header, or in the PCI of the IP protocol, it is mandatory content:", o: ["The Time To Live field that allows the elimination from the network of packets that have passed through too many routers", "The source MAC address, useful for sending replies to received packets", "The ACK Number field for the numbering of the hits (ACK)", "The CODE field, which contains the SYN, FIN and ACK flags for opening and closing the connection"], c: 0, col: "ip", hint: "TTL field purpose", exp: "TTL prevents infinite loops" },
+            { q: "A link state routing algorithm provides that:", o: ["Each node of the network communicates the information on the cost of transmission to all the nodes of the network towards the nodes adjacent to it", "Each node in the network generates its own routing tables and then distributes them to the nodes only adjacent", "Each node in the network communicates information on cost and direction to the nodes adjacent to it of the roads that lead to every possible destination", "Each node on the network generates its own routing tables and then distributes them to everyone else network nodes"], c: 0, col: "routing", hint: "Link state flooding", exp: "Slide Strato3: Routing pag 11" },
+            { q: "In an Ethernet network where terminals are connected in full-duplex mode to the ports of one switch using a UTP cable:", o: ["The CSMA / CD access protocol is in fact useless because the switch separates the collision domains between its doors", "The CSMA / CD access protocol is in fact useless because the switch works at higher bit rates or equal to 1GB / s, making frames short-lived", "The CSMA / CD access protocol is still used for bit rates below 100Mb / s", "The CSMA / CD access protocol is still used, but only in case two transmissions begin at the same time"], c: 0, col: "ethernet", hint: "Collision domain separation", exp: "occurred during exam correction." },
+            { q: "Over a time interval T, a transmitter node using a windowed protocol Go-Back-N with window equal to 5 PDUs transmits PDUs numbered 9, 10, 11 and receives ACK (cumulative) 8. Assuming the timeout has not expired and ACK 8 is the one with the highest sequence number received up to this point, which of the following actions is allowed by the protocol rules in this one situation?", o: ["Send PDU 12", "Send PDU 8", "Send PDUs 12 and 13", "No action until more ACKs are received"], c: 0, col: "protocols", hint: "Window advancement", exp: "occurred during exam correction." },
+            { q: "A (N) -PDU (Protocol Data Unit), passing to level (N-1) becomes:", o: ["One or more (N) -SDUs (Service Data Units)", "One or more (N-1) -SDU (Service Data Unit)", "Una (N-1) -PCI (Protocol Control Information)", "One or more (N-1) -SDUs (Service Data Units) to which N-PCI are added"], c: 1, col: "osi", hint: "PDU encapsulation", exp: "checked during exam correction." },
+            { q: "The Address Resolution Protocol (ARP) allows you to:", o: ["Obtain an unknown IP address of a host from a domain name", "Send error messages between routers", "Obtain an unknown MAC address of a host from an IP address", "Obtain an unknown IP address of a host from a MAC address"], c: 2, col: "general", hint: "IP to MAC mapping", exp: "ARP resolves IP to MAC address" },
+            { q: "Which of these Web cookie statements is false?", o: ["A browser in possession of a cookie includes it in subsequent requests to its HTTP server", "The browser creates a different cookie every time it accesses the same HTTP server", "The cookie is created by the HTTP server when a browser logs in for the first time", "The cookie is stored by the browser in the client host's file system"], c: 1, col: "http", hint: "Cookie persistence", exp: "Cookies are reused, not recreated" },
+            { q: "Which of the following statements about the comparison between the Aloha and Slotted-Aloha protocols is true?", o: ["Collisions in Aloha can occur at any time, while in Slotted-Aloha they coincide with the beginning of the plots", "Broadcasts in Aloha can start at any time, while in Slotted-Aloha they must be preceded by a channel reservation slot", "The transmission in Slotted-Aloha must be preceded by listening to the channel, while in Aloha it can happen as soon as the plot is available", "Unlike Slotted-Aloha, Aloha's performance depends on propagation delays"], c: 0, col: "mac", hint: "Timing differences", exp: "occurred during exam correction." },
+            { q: "In the event that an error in the configuration of the forwarding tables on the routers generates a closed path on the net, which of these statements is true?", o: ["A datagram that circulates on that path is sooner or later deleted by routers on the basis of the TTL field", "The spanning tree protocol prevents these problems from arising before they arise", "A datagram can circulate on this path indefinitely", "A datagram that circulates on this path is sooner or later eliminated by the routers, which detect it comparing the content to the copies kept in the local cache"], c: 0, col: "ip", hint: "TTL loop prevention", exp: "occurred during exam correction." },
+            { q: "The transmission delay of a PDU in a packet switching network:", o: ["It depends on the size of the PDU and the distance between the transmitter and receiver", "It just depends on the bit rate of the transmitter", "It depends on the bit rate of the transmitter and the distance between the transmitter and the receiver", "It depends on the bit rate of the transmitter and the size of the PDU"], c: 3, col: "packet-switching", hint: "Transmission time formula", exp: "Checked during exam correction." },
+            { q: "Consider an extended LAN in Ethernet technology whose nodes are interconnected by transparent switches. Which of the following statements is false ?", o: ["Switches can support the creation of Virtual LANs", "Switches introduce additional delay in transmissions between nodes connected through the switches themselves", "It is necessary to change the configuration of the nodes connected to the LAN to allow correct routing of MAC frames between switches", "The switches separate the collision domains of the interconnected network portions"], c: 2, col: "ethernet", hint: "Transparent operation", exp: "checked during exam correction." },
+            { q: "Regarding the reception of an out of sequence segment in TCP, which one of these statements is true?", o: ["The reordering of segments is the responsibility of the RTP protocol", "The receiver immediately delivers the segment to the higher protocol levels", "The receiver always discards the segment which is to be transmitted again", "The receiver returns an acknowledgment number referring to the next expected byte"], c: 3, col: "tcp", hint: "TCP receiver ACK behavior", exp: "To be checked" },
+            { q: "With the same number of bits of information transmitted, which of the following line codings requires a physically higher bit rate?", o: ["4B5B encoding", "Polar coding NRZ", "Manchester coding", "Unipolar coding"], c: 2, col: "general", hint: "Encoding efficiency", exp: "checked during exam correction. 4B5B requires a bit rate of 1.25, NRZ and unipolar require a bit rate of 1, Manchester it requires a bit rate of 2. Physical layer - pages 28-32" }
+        ];
+
+        let quizQuestions = [];
+        let currentQuestion = 0;
+        let userAnswers = [];
+        let isAnswered = [];
+
+        function startQuiz() {
+            const collection = document.getElementById('collectionSelect').value;
+            const count = parseInt(document.getElementById('questionCount').value);
+            const order = document.getElementById('questionOrder').value;
+
+            let filtered = allQuestions;
+            if (collection !== 'all') {
+                filtered = allQuestions.filter(q => q.col.includes(collection));
+            }
+
+            if (filtered.length === 0) {
+                alert('No questions available for this collection. Showing all questions.');
+                filtered = allQuestions;
+            }
+
+            const availableCount = Math.min(count, filtered.length);
+
+            const shuffled = [...filtered].sort(() => Math.random() - 0.5);
+            quizQuestions = shuffled.slice(0, availableCount);
+
+            if (order === 'random') {
+                quizQuestions = quizQuestions.sort(() => Math.random() - 0.5);
+            }
+
+            userAnswers = new Array(quizQuestions.length).fill(null);
+            isAnswered = new Array(quizQuestions.length).fill(false);
+            currentQuestion = 0;
+
+            document.getElementById('setupScreen').classList.remove('active');
+            document.getElementById('quizScreen').classList.add('active');
+            document.getElementById('totalQ').textContent = quizQuestions.length;
+
+            displayQuestion();
+        }
+
+        function displayQuestion() {
+            const q = quizQuestions[currentQuestion];
+
+            document.getElementById('currentQ').textContent = currentQuestion + 1;
+            document.getElementById('questionNumber').textContent = `Question ${currentQuestion + 1} of ${quizQuestions.length}`;
+            document.getElementById('collectionBadge').textContent = q.col.split('|')[0].toUpperCase();
+            document.getElementById('questionText').textContent = q.q;
+
+            const container = document.getElementById('optionsContainer');
+            container.innerHTML = '';
+
+            q.o.forEach((option, i) => {
+                const div = document.createElement('div');
+                div.className = 'option';
+                if (isAnswered[currentQuestion]) {
+                    div.classList.add('locked');
+                }
+
+                if (userAnswers[currentQuestion] === i) {
+                    div.classList.add('selected');
+                    if (i === q.c) {
+                        div.classList.add('correct');
+                    } else {
+                        div.classList.add('wrong');
+                    }
+                }
+
+                if (isAnswered[currentQuestion] && i === q.c) {
+                    div.classList.add('correct');
+                }
+
+                if (!isAnswered[currentQuestion]) {
+                    div.onclick = () => selectOption(i);
+                }
+
+                const letter = document.createElement('div');
+                letter.className = 'option-letter';
+                letter.textContent = String.fromCharCode(65 + i);
+
+                const text = document.createElement('div');
+                text.textContent = option;
+                text.style.flex = '1';
+
+                div.appendChild(letter);
+                div.appendChild(text);
+                container.appendChild(div);
+            });
+
+            const hintBox = document.getElementById('hintBox');
+            const explanationSection = document.getElementById('explanationSection');
+
+            document.getElementById('hintText').textContent = q.hint || 'No hint available';
+            document.getElementById('explanationText').textContent = q.exp || 'No explanation available';
+
+            if (isAnswered[currentQuestion]) {
+                explanationSection.classList.add('show');
+            } else {
+                explanationSection.classList.remove('show');
+            }
+
+            document.getElementById('prevBtn').disabled = currentQuestion === 0;
+            document.getElementById('nextBtn').style.display = currentQuestion < quizQuestions.length - 1 ? 'inline-block' : 'none';
+            document.getElementById('finishBtn').style.display = currentQuestion === quizQuestions.length - 1 ? 'inline-block' : 'none';
+
+            updateProgress();
+            updateStats();
+        }
+
+        function selectOption(index) {
+            if (isAnswered[currentQuestion]) return;
+
+            userAnswers[currentQuestion] = index;
+            isAnswered[currentQuestion] = true;
+
+            displayQuestion();
+
+            setTimeout(() => {
+                const explanationSection = document.getElementById('explanationSection');
+                if (explanationSection && window.innerWidth <= 768) {
+                    explanationSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }, 100);
+        }
+
+        function nextQuestion() {
+            if (currentQuestion < quizQuestions.length - 1) {
+                currentQuestion++;
+                displayQuestion();
+            }
+        }
+
+        function previousQuestion() {
+            if (currentQuestion > 0) {
+                currentQuestion--;
+                displayQuestion();
+            }
+        }
+
+        function updateProgress() {
+            const progress = ((currentQuestion + 1) / quizQuestions.length) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+        }
+
+        function updateStats() {
+            const answered = isAnswered.filter(a => a === true).length;
+            document.getElementById('answered').textContent = answered;
+        }
+
+        function finishQuiz() {
+            const unanswered = isAnswered.filter(a => !a).length;
+            if (unanswered > 0) {
+                if (!confirm(`You have ${unanswered} unanswered questions. Finish anyway?`)) {
+                    return;
+                }
+            }
+
+            showResults();
+        }
+
+        function showResults() {
+            let correct = 0;
+            let wrong = 0;
+
+            quizQuestions.forEach((q, i) => {
+                if (isAnswered[i]) {
+                    if (userAnswers[i] === q.c) {
+                        correct++;
+                    } else {
+                        wrong++;
+                    }
+                }
+            });
+
+            const total = correct + wrong;
+            const percentage = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+            document.getElementById('finalPercentage').textContent = percentage + '%';
+            document.getElementById('totalAnswered').textContent = total;
+            document.getElementById('correctCount').textContent = correct;
+            document.getElementById('wrongCount').textContent = wrong;
+
+            document.getElementById('quizScreen').classList.remove('active');
+            document.getElementById('resultsScreen').classList.add('active');
+        }
+
+        function restartQuiz() {
+            document.getElementById('resultsScreen').classList.remove('active');
+            document.getElementById('setupScreen').classList.add('active');
+        }
+
+        function reviewAnswers() {
+            currentQuestion = 0;
+            document.getElementById('resultsScreen').classList.remove('active');
+            document.getElementById('quizScreen').classList.add('active');
+            displayQuestion();
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (document.getElementById('quizScreen').classList.contains('active')) {
+                if (e.key === 'ArrowLeft') previousQuestion();
+                if (e.key === 'ArrowRight') nextQuestion();
+            }
+        });
+        function startQuizWithResults() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+
+            const matches = allQuestions.filter(q =>
+                q.q.toLowerCase().includes(query) ||
+                q.o.some(opt => opt.toLowerCase().includes(query))
+            );
+
+            if (matches.length === 0) return;
+
+            const order = document.getElementById('questionOrder').value;
+            quizQuestions = order === 'random'
+                ? [...matches].sort(() => Math.random() - 0.5)
+                : [...matches];
+
+            userAnswers = new Array(quizQuestions.length).fill(null);
+            isAnswered = new Array(quizQuestions.length).fill(false);
+            currentQuestion = 0;
+
+            document.getElementById('setupScreen').classList.remove('active');
+            document.getElementById('quizScreen').classList.add('active');
+            document.getElementById('totalQ').textContent = quizQuestions.length;
+
+            displayQuestion();
+        }
+        function searchQuestions() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            const resultsContainer = document.getElementById('searchResults');
+            const countDisplay = document.getElementById('searchCount');
+            const practiceBtn = document.getElementById('practiceResultsBtn');
+
+            if (query.length < 2) {
+                resultsContainer.innerHTML = '';
+                resultsContainer.classList.remove('has-results');
+                countDisplay.textContent = '';
+                practiceBtn.style.display = 'none';
+                return;
+            }
+
+            const matches = allQuestions.filter(q =>
+                q.q.toLowerCase().includes(query) ||
+                q.o.some(opt => opt.toLowerCase().includes(query))
+            );
+
+            countDisplay.textContent = `Found ${matches.length} question${matches.length !== 1 ? 's' : ''}`;
+
+            if (matches.length === 0) {
+                resultsContainer.innerHTML = '<div class="search-result-item"><em>No questions found</em></div>';
+                resultsContainer.classList.add('has-results');
+                practiceBtn.style.display = 'none';
+                return;
+            }
+
+            // Show practice button
+            practiceBtn.style.display = 'block';
+            document.getElementById('resultCount').textContent = matches.length;
+
+            const maxResults = 50;
+            const displayResults = matches.slice(0, maxResults);
+
+            resultsContainer.innerHTML = displayResults.map((q, i) => {
+                const qIndex = allQuestions.indexOf(q);
+                const truncatedText = q.q.length > 100 ? q.q.substring(0, 100) + '...' : q.q;
+                return `
+            <div class="search-result-item" onclick="startQuizWithQuestion(${qIndex})">
+                <span class="result-collection">${q.col.toUpperCase()}</span>
+                <span class="result-text">${truncatedText}</span>
+            </div>
+        `;
+            }).join('');
+
+            if (matches.length > maxResults) {
+                resultsContainer.innerHTML += `<div class="search-result-item" style="color: #7f8c8d; cursor: default;"><em>...and ${matches.length - maxResults} more results</em></div>`;
+            }
+
+            resultsContainer.classList.add('has-results');
+        }
+
+        function startQuizWithQuestion(questionIndex) {
+            quizQuestions = [allQuestions[questionIndex]];
+            userAnswers = [null];
+            isAnswered = [false];
+            currentQuestion = 0;
+
+            document.getElementById('setupScreen').classList.remove('active');
+            document.getElementById('quizScreen').classList.add('active');
+            document.getElementById('totalQ').textContent = 1;
+
+            displayQuestion();
+        }
+    </script>
+
+    <div style="text-align:center;font-size:12px;padding:8px;color:#888;">
+        You can <a href="https://github.com/ardaozler/ComputerNetworksQuizzer" target="_blank">download</a> and run this on any device fully offline.
+    </div>
+    <div style="text-align:center;font-size:12px;padding:8px;color:#888;">
+        Support: <a href="https://ko-fi.com/ardaneedscoffee" target="_blank">ko-fi.com/ardaneedscoffee</a>
+    </div>
+</body>
+
+</html>
